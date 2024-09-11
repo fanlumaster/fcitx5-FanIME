@@ -1,0 +1,14 @@
+[InputMethod]
+# Translatable name of the input method
+Name=FanIME
+# Icon name
+Icon=
+# A short label that present the name of input method
+Label=汉
+# ISO 639 language code
+LangCode=zh_CN
+# Match addon name
+Addon=fanime
+# Whether this input method support customization
+# Configurable=True
+

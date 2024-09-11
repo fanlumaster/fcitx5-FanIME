@@ -1,0 +1,7 @@
+---
+BasedOnStyle: llvm
+IndentWidth: 4
+
+# do not sort header files
+SortIncludes: false
+ColumnLimit: 300

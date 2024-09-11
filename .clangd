@@ -1,0 +1,11 @@
+CompileFlags:
+  Add: [
+    -I/home/fanyfull/EDisk/CppCodes/IMECodes/fcitx5-quwei/src/,
+    -I/usr/include/Fcitx5/Utils/,
+    -I/usr/include/Fcitx5/Utils/fcitx-utils/,
+    -I/usr/include/Fcitx5/Core,
+    -I/usr/include/Fcitx5/Config/,
+    -I/usr/include/Fcitx5/Module/,
+    -I/usr/include/Fcitx5/Module/fcitx-module/punctuation/,
+    -I/usr/include/Fcitx5/Module/fcitx-module/quickphrase/,
+  ]
