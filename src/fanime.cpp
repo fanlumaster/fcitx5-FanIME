@@ -39,9 +39,9 @@ template <class T> using second_argument_type = typename std::tuple_element<1, t
 static const std::array<fcitx::Key, 11> selectionKeys = {fcitx::Key{FcitxKey_1}, fcitx::Key{FcitxKey_2}, fcitx::Key{FcitxKey_3}, fcitx::Key{FcitxKey_4}, fcitx::Key{FcitxKey_5},    fcitx::Key{FcitxKey_6},
                                                          fcitx::Key{FcitxKey_7}, fcitx::Key{FcitxKey_8}, fcitx::Key{FcitxKey_9}, fcitx::Key{FcitxKey_0}, fcitx::Key{FcitxKey_space}};
 
-class QuweiCandidateWord : public fcitx::CandidateWord {
+class FanimeCandidateWord : public fcitx::CandidateWord {
   public:
-    QuweiCandidateWord(QuweiEngine *engine, std::string text) : engine_(engine) { setText(fcitx::Text(std::move(text))); }
+    FanimeCandidateWord(FanimeEngine *engine, std::string text) : engine_(engine) { setText(fcitx::Text(std::move(text))); }
 
     void select(fcitx::InputContext *inputContext) const override {
         inputContext->commitString(text().toString());
@@ -51,16 +51,16 @@ class QuweiCandidateWord : public fcitx::CandidateWord {
     }
 
   private:
-    QuweiEngine *engine_;
+    FanimeEngine *engine_;
 };
 
-class QuweiCandidateList : public fcitx::CandidateList, public fcitx::PageableCandidateList, public fcitx::CursorMovableCandidateList {
+class FanimeCandidateList : public fcitx::CandidateList, public fcitx::PageableCandidateList, public fcitx::CursorMovableCandidateList {
   public:
-    QuweiCandidateList(QuweiEngine *engine, fcitx::InputContext *ic, const std::string &code) : engine_(engine), ic_(ic), code_(code) {
+    FanimeCandidateList(FanimeEngine *engine, fcitx::InputContext *ic, const std::string &code) : engine_(engine), ic_(ic), code_(code) {
         setPageable(this);
         setCursorMovable(this);
-        cand_size = generate(); // generate actually
-        for (int i = 0; i < cand_size; i++) {     // generate indices of candidate window
+        cand_size = generate();               // generate actually
+        for (int i = 0; i < cand_size; i++) { // generate indices of candidate window
             const char label[2] = {static_cast<char>('0' + (i + 1) % 10), '\0'};
             labels_[i].append(label);
             labels_[i].append(". ");
@@ -109,7 +109,7 @@ class QuweiCandidateList : public fcitx::CandidateList, public fcitx::PageableCa
     int cursorIndex() const override { return cursor_; }
 
   private:
-    // generate words corresponding to Quwei code
+    // generate words
     int generate() {
         FCITX_INFO() << "fanywhat: " << code_;
         std::vector<std::string> candi_vec = dict.generate(code_);
@@ -117,20 +117,19 @@ class QuweiCandidateList : public fcitx::CandidateList, public fcitx::PageableCa
         for (long unsigned int i = 0; i < 10; i++) {
             if (i >= vec_size) {
                 FCITX_INFO() << i << " greater version: ";
-                // candidates_[i] = std::make_unique<QuweiCandidateWord>(engine_, "what");
             } else {
                 FCITX_INFO() << i << " han char test: " << candi_vec[i];
                 FCITX_INFO() << "less version: " << candi_vec[i];
-                candidates_[i] = std::make_unique<QuweiCandidateWord>(engine_, candi_vec[i]);
+                candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, candi_vec[i]);
             }
         }
         return vec_size;
     }
 
-    QuweiEngine *engine_;
+    FanimeEngine *engine_;
     fcitx::InputContext *ic_;
     fcitx::Text labels_[10];
-    std::unique_ptr<QuweiCandidateWord> candidates_[10];
+    std::unique_ptr<FanimeCandidateWord> candidates_[10];
     std::vector<std::string> fanyCandi = {"韵酒", "东教工", "集锦园", "喻园", "梧桐语", "百景园", "西华园", "东园", "绿园", "紫荆园"};
     std::string code_;
     int cursor_ = 0;
@@ -138,11 +137,11 @@ class QuweiCandidateList : public fcitx::CandidateList, public fcitx::PageableCa
     static DictionaryUlPb dict;
 };
 
-DictionaryUlPb QuweiCandidateList::dict = DictionaryUlPb();
+DictionaryUlPb FanimeCandidateList::dict = DictionaryUlPb();
 
 } // namespace
 
-void QuweiState::keyEvent(fcitx::KeyEvent &event) {
+void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     // 如果候选列表不为空，那么，在键入数字键之后，就可以将候选项选中并且上屏了
     if (auto candidateList = ic_->inputPanel().candidateList()) {
         // 数字键的情况
@@ -244,19 +243,19 @@ void QuweiState::keyEvent(fcitx::KeyEvent &event) {
     return event.filterAndAccept();
 }
 
-void QuweiState::setCode(std::string code) {
+void FanimeState::setCode(std::string code) {
     // TODO: 重写
     buffer_.clear();
     buffer_.type(code);
     updateUI();
 }
 
-void QuweiState::updateUI() {
+void FanimeState::updateUI() {
     auto &inputPanel = ic_->inputPanel(); // also need to track the initialization of ic_
     inputPanel.reset();
     if (buffer_.size() > 0) { // if already type 3 digits
         FCITX_INFO() << "when typing chars";
-        inputPanel.setCandidateList(std::make_unique<QuweiCandidateList>(engine_, ic_, buffer_.userInput()));
+        inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
     }
     if (ic_->capabilityFlags().test(fcitx::CapabilityFlag::Preedit)) {
         fcitx::Text preedit(buffer_.userInput(), fcitx::TextFormatFlag::HighLight);
@@ -269,15 +268,15 @@ void QuweiState::updateUI() {
     ic_->updatePreedit();
 }
 
-QuweiEngine::QuweiEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new QuweiState(this, &ic); }) {
+FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
     conv_ = iconv_open("UTF-8", "GB18030");
     if (conv_ == reinterpret_cast<iconv_t>(-1)) {
         throw std::runtime_error("Failed to create converter");
     }
-    instance->inputContextManager().registerProperty("quweiState", &factory_);
+    instance->inputContextManager().registerProperty("fanimeState", &factory_);
 }
 
-void QuweiEngine::activate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) {
+void FanimeEngine::activate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) {
     FCITX_UNUSED(entry);
     auto *inputContext = event.inputContext();
     // Request full width.
@@ -290,7 +289,7 @@ void QuweiEngine::activate(const fcitx::InputMethodEntry &entry, fcitx::InputCon
     }
 }
 
-void QuweiEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEvent &keyEvent) {
+void FanimeEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEvent &keyEvent) {
     FCITX_UNUSED(entry);
     if (keyEvent.isRelease() || keyEvent.key().states()) {
         return;
@@ -301,9 +300,9 @@ void QuweiEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEvent
     state->keyEvent(keyEvent);
 }
 
-void QuweiEngine::reset(const fcitx::InputMethodEntry &, fcitx::InputContextEvent &event) {
+void FanimeEngine::reset(const fcitx::InputMethodEntry &, fcitx::InputContextEvent &event) {
     auto *state = event.inputContext()->propertyFor(&factory_);
     state->reset();
 }
 
-FCITX_ADDON_FACTORY(QuweiEngineFactory);
+FCITX_ADDON_FACTORY(FanimeEngineFactory);
