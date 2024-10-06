@@ -1,6 +1,6 @@
 ---
 BasedOnStyle: llvm
-IndentWidth: 4
+IndentWidth: 2
 
 # do not sort header files
 SortIncludes: false
