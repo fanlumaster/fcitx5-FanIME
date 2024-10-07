@@ -4,4 +4,4 @@ IndentWidth: 2
 
 # do not sort header files
 SortIncludes: false
-ColumnLimit: 300
+ColumnLimit: 1000
