@@ -1,5 +1,6 @@
 CompileFlags:
   Add: [
+    "-std=c++17",
     -I/home/fanyfull/EDisk/CppCodes/IMECodes/fcitx5-quwei/src/,
     -I/usr/include/Fcitx5/Utils/,
     -I/usr/include/Fcitx5/Utils/fcitx-utils/,
@@ -8,4 +9,5 @@ CompileFlags:
     -I/usr/include/Fcitx5/Module/,
     -I/usr/include/Fcitx5/Module/fcitx-module/punctuation/,
     -I/usr/include/Fcitx5/Module/fcitx-module/quickphrase/,
+    -Wunused-variable,
   ]
