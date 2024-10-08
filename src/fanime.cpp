@@ -6,6 +6,7 @@
  */
 #include "fanime.h"
 #include "dict.h"
+#include "log.h"
 #include <cctype>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/utf8.h>
@@ -18,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
 
 namespace {
 
@@ -36,8 +38,7 @@ template <class R, class... Args> struct function_traits<R (*)(Args...)> {
 
 template <class T> using second_argument_type = typename std::tuple_element<1, typename function_traits<T>::argument_types>::type;
 
-static const std::array<fcitx::Key, 11> selectionKeys = {fcitx::Key{FcitxKey_1}, fcitx::Key{FcitxKey_2}, fcitx::Key{FcitxKey_3}, fcitx::Key{FcitxKey_4}, fcitx::Key{FcitxKey_5},    fcitx::Key{FcitxKey_6},
-                                                         fcitx::Key{FcitxKey_7}, fcitx::Key{FcitxKey_8}, fcitx::Key{FcitxKey_9}, fcitx::Key{FcitxKey_0}, fcitx::Key{FcitxKey_space}};
+static const std::array<fcitx::Key, 11> selectionKeys = {fcitx::Key{FcitxKey_1}, fcitx::Key{FcitxKey_2}, fcitx::Key{FcitxKey_3}, fcitx::Key{FcitxKey_4}, fcitx::Key{FcitxKey_5}, fcitx::Key{FcitxKey_6}, fcitx::Key{FcitxKey_7}, fcitx::Key{FcitxKey_8}, fcitx::Key{FcitxKey_9}, fcitx::Key{FcitxKey_0}, fcitx::Key{FcitxKey_space}};
 
 class FanimeCandidateWord : public fcitx::CandidateWord {
 public:
@@ -111,17 +112,17 @@ public:
 private:
   // generate words
   int generate() {
-    FCITX_INFO() << "fanywhat: " << code_;
+    // logger->info("fanycode => " + code_);
     std::vector<std::string> candi_vec = dict.generate(code_);
     long unsigned int vec_size = candi_vec.size() > 10 ? 10 : candi_vec.size();
     for (long unsigned int i = 0; i < 10; i++) {
-      if (i >= vec_size) {
-        FCITX_INFO() << i << " greater version: ";
-      } else {
-        FCITX_INFO() << i << " han char test: " << candi_vec[i];
-        FCITX_INFO() << "less version: " << candi_vec[i];
+      if (i < vec_size) {
         candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, candi_vec[i]);
       }
+    }
+    if (vec_size == 0) {
+      candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "😍");
+      return 1;
     }
     return vec_size;
   }
@@ -135,9 +136,11 @@ private:
   int cursor_ = 0;
   int cand_size = CANDIDATE_SIZE;
   static DictionaryUlPb dict;
+  static std::unique_ptr<Log> logger;
 };
 
 DictionaryUlPb FanimeCandidateList::dict = DictionaryUlPb();
+std::unique_ptr<Log> FanimeCandidateList::logger = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
 
 } // namespace
 
@@ -178,7 +181,6 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
 
   if (buffer_.empty()) {                                              // current text buffer is empty
     if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text is empty and not digit
-      FCITX_INFO() << event.key().code() << " " << event.key().digit() << " " << event.key().sym() << " " << event.key().keySymToString(event.key().sym()) << " " << "first is right?";
       // if it gonna commit something
       auto c = fcitx::Key::keySymToUnicode(event.key().sym());
       if (!c) {
@@ -231,7 +233,6 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     }
     if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text buffer is not empty, and current key pressed is not digit
 
-      FCITX_INFO() << event.key().code() << " " << event.key().digit() << " " << event.key().sym() << " " << "here is right?";
       return event.filterAndAccept();
     }
   }
@@ -254,7 +255,6 @@ void FanimeState::updateUI() {
   auto &inputPanel = ic_->inputPanel(); // also need to track the initialization of ic_
   inputPanel.reset();
   if (buffer_.size() > 0) { // if already type 3 digits
-    FCITX_INFO() << "when typing chars";
     inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
   }
   if (ic_->capabilityFlags().test(fcitx::CapabilityFlag::Preedit)) {
@@ -294,7 +294,7 @@ void FanimeEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEven
   if (keyEvent.isRelease() || keyEvent.key().states()) {
     return;
   }
-  FCITX_INFO() << keyEvent.key() << " isRelease=" << keyEvent.isRelease();
+  // FCITX_INFO() << keyEvent.key() << " isRelease=" << keyEvent.isRelease();
   auto ic = keyEvent.inputContext();
   auto *state = ic->propertyFor(&factory_);
   state->keyEvent(keyEvent);

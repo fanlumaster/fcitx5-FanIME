@@ -1,6 +1,9 @@
+find_package(SQLite3 REQUIRED)
+# find_package(Boost REQUIRED COMPONENTS algorithm)
+
 # Make sure it produce fanime.so instead of libfanime.so
-add_library(fanime SHARED fanime.cpp dict.cpp)
-target_link_libraries(fanime PRIVATE Fcitx5::Core Fcitx5::Module::Punctuation  Fcitx5::Module::QuickPhrase)
+add_library(fanime SHARED fanime.cpp dict.cpp log.cpp utils.cpp)
+target_link_libraries(fanime PRIVATE Fcitx5::Core Fcitx5::Module::Punctuation  Fcitx5::Module::QuickPhrase SQLite::SQLite3)
 install(TARGETS fanime DESTINATION "${FCITX_INSTALL_LIBDIR}/fcitx5")
 
 # Addon config file

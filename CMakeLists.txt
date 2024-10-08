@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.27)
 project(fcitx5-fanime VERSION 1.0.0)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Gettext REQUIRED)
 find_package(Fcitx5Core REQUIRED)
