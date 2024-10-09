@@ -16,6 +16,7 @@
 #include <fcitx/inputpanel.h>
 #include <fcitx/instance.h>
 #include <iconv.h>
+#include "log.h"
 
 class FanimeEngine;
 
@@ -25,7 +26,9 @@ public:
 
   void keyEvent(fcitx::KeyEvent &keyEvent);
   void setCode(std::string code);
+  void updateForNextPage(int page_index);
   void updateUI();
+  void updateUIForNextPage();
   // 清除 buffer，更新 UI
   void reset() {
     buffer_.clear();
@@ -36,6 +39,7 @@ private:
   FanimeEngine *engine_;
   fcitx::InputContext *ic_;
   fcitx::InputBuffer buffer_{{fcitx::InputBufferOption::AsciiOnly, fcitx::InputBufferOption::FixedCursor}};
+  static std::unique_ptr<::Log> logger;
 };
 
 class FanimeEngine : public fcitx::InputMethodEngineV2 {
