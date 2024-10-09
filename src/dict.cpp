@@ -145,9 +145,9 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string sp_str, std::
     std::string cur_pinyin = pinyin_list[i];
     if (cur_pinyin.size() == 1) {
       all_entire_pinyin = false;
+      jp_cnt += 1;
     } else {
       all_jp = false;
-      jp_cnt += 1;
     }
   }
   std::string sql;
