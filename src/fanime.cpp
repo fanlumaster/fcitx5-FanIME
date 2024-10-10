@@ -1,6 +1,7 @@
 #include "fanime.h"
 #include "dict.h"
 #include "log.h"
+#include "pinyin_utils.h"
 #include <cctype>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/utf8.h>
@@ -289,10 +290,10 @@ void FanimeState::updateUI() {
     inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
   }
   if (ic_->capabilityFlags().test(fcitx::CapabilityFlag::Preedit)) {
-    fcitx::Text preedit(buffer_.userInput(), fcitx::TextFormatFlag::HighLight);
+    fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()), fcitx::TextFormatFlag::HighLight);
     inputPanel.setClientPreedit(preedit);
   } else {
-    fcitx::Text preedit(buffer_.userInput());
+    fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()));
     inputPanel.setPreedit(preedit);
   }
   ic_->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
