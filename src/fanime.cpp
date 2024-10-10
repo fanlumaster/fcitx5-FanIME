@@ -25,7 +25,7 @@ namespace {
 
 static const int CANDIDATE_SIZE = 8; // 候选框默认的 size，不许超过 9，不许小于 4
 
-bool checkAlpha(std::string s) { return s.size() == 1 && isalpha(s[0]); }
+bool checkAlpha(const std::string &s) { return s.size() == 1 && isalpha(s[0]); }
 
 // Template to help resolve iconv parameter issue on BSD.
 template <class T> struct function_traits;
@@ -58,6 +58,7 @@ private:
 class FanimeCandidateList : public fcitx::CandidateList, public fcitx::PageableCandidateList, public fcitx::CursorMovableCandidateList {
 public:
   FanimeCandidateList(FanimeEngine *engine, fcitx::InputContext *ic, const std::string &code) : engine_(engine), ic_(ic), code_(code) {
+    boost::algorithm::to_lower(code_);
     setPageable(this);
     setCursorMovable(this);
     cand_size = generate();               // generate actually
@@ -217,7 +218,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
   }
 
   if (buffer_.empty()) {                                              // current text buffer is empty
-    if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text is empty and not digit
+    if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text is empty and not alpha
       // if it gonna commit something
       auto c = fcitx::Key::keySymToUnicode(event.key().sym());
       if (!c) {
@@ -268,14 +269,13 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       reset();
       return event.filterAndAccept();
     }
-    if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text buffer is not empty, and current key pressed is not digit
-
+    if (!checkAlpha(event.key().keySymToString(event.key().sym()))) { // current text buffer is not empty, and current key pressed is not alpha
       return event.filterAndAccept();
     }
   }
 
-  // 1. current text buffer is empty and current key pressed is digit
-  // 2. current text buffer is not empty and current key pressed is digit
+  // 1. current text buffer is empty and current key pressed is alpha
+  // 2. current text buffer is not empty and current key pressed is alpha
   buffer_.type(event.key().sym()); // update buffer_, so when the fucking event itself is updated?
   updateUI();
   return event.filterAndAccept();

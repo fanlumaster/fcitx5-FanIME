@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sqlite3.h>
 #include <memory>
+#include <boost/algorithm/string.hpp>
 
 #include "log.h"
 

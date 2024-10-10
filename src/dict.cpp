@@ -1,7 +1,6 @@
 #include "dict.h"
 #include "utils.h"
 #include <sqlite3.h>
-#include <boost/algorithm/string.hpp>
 #include <utility>
 #include <regex>
 
