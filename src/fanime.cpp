@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <boost/locale.hpp>
 
 namespace {
 
@@ -40,7 +41,12 @@ public:
   FanimeCandidateWord(FanimeEngine *engine, std::string text) : engine_(engine) { setText(fcitx::Text(std::move(text))); }
 
   void select(fcitx::InputContext *inputContext) const override {
-    inputContext->commitString(text().toString());
+    std::string text_to_commit = text().toString();
+    size_t start_pos = text_to_commit.find('(');
+    if (start_pos != std::string::npos) {
+      text_to_commit.erase(start_pos, text_to_commit.size() - start_pos + 1);
+    }
+    inputContext->commitString(text_to_commit);
     // inputContext->commitString("fanyfull");
     auto state = inputContext->propertyFor(engine_->factory());
     state->reset();
@@ -141,9 +147,28 @@ public:
 private:
   // generate words
   int generate() {
-    // logger->info("fanycode => " + code_);
-    // std::vector<std::string> candi_vec = dict.generate(code_);
-    cur_candidates_ = dict.generate(code_);
+    if (code_.size() > 1 && code_.size() % 2) {
+      auto tmp_cand_list = dict.generate(code_.substr(0, code_.size() - 1));
+      for (const auto &cand : tmp_cand_list) {
+        size_t cplen = 1;
+        // https://en.wikipedia.org/wiki/UTF-8#Description
+        if ((cand[0] & 0xf8) == 0xf0)
+          cplen = 4;
+        else if ((cand[0] & 0xf0) == 0xe0)
+          cplen = 3;
+        else if ((cand[0] & 0xe0) == 0xc0)
+          cplen = 2;
+        if (cplen > cand.length())
+          cplen = 1;
+        if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+          cur_candidates_.push_back(cand + "(" + PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] + ")");
+        }
+      }
+      auto tmp_cand_list_02 = dict.generate(code_);
+      cur_candidates_.insert(cur_candidates_.end(), tmp_cand_list_02.begin(), tmp_cand_list_02.end());
+    } else {
+      cur_candidates_ = dict.generate(code_);
+    }
     cur_page_ = 0;
     long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
     for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
