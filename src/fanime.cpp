@@ -288,8 +288,6 @@ void FanimeState::setCode(std::string code) {
   updateUI();
 }
 
-void FanimeState::updateForNextPage(int page_index) { updateUI(); }
-
 void FanimeState::updateUI() {
   auto &inputPanel = ic_->inputPanel(); // also need to track the initialization of ic_
   inputPanel.reset();
