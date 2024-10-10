@@ -1,5 +1,5 @@
 #include "dict.h"
-#include "utils.h"
+#include "pinyin_utils.h"
 #include <sqlite3.h>
 #include <utility>
 #include <regex>

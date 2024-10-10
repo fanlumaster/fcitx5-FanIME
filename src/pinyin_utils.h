@@ -1,3 +1,5 @@
+#ifndef PINYIN_UTILS_H
+#define PINYIN_UTILS_H
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -19,3 +21,5 @@ public:
   static std::string cvt_single_sp_to_pinyin(std::string sp_str);
   static std::string pinyin_segmentation(std::string sp_str);
 };
+
+#endif // PINYIN_UTILS_H

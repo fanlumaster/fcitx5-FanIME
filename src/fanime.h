@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2021~2021 CSSlayer <wengxt@gmail.com>
- *
- * SPDX-License-Identifier: BSD-3-Clause
- *
- */
 #ifndef _FCITX5_FANIME_FANIME_H_
 #define _FCITX5_FANIME_FANIME_H_
 

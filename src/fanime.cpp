@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2021~2021 CSSlayer <wengxt@gmail.com>
- *
- * SPDX-License-Identifier: BSD-3-Clause
- *
- */
 #include "fanime.h"
 #include "dict.h"
 #include "log.h"
