@@ -305,23 +305,6 @@ void FanimeState::updateUI() {
   ic_->updatePreedit();
 }
 
-void FanimeState::updateUIForNextPage() {
-  auto &inputPanel = ic_->inputPanel(); // also need to track the initialization of ic_
-  inputPanel.candidateList();
-  inputPanel.reset();
-  inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
-
-  if (ic_->capabilityFlags().test(fcitx::CapabilityFlag::Preedit)) {
-    fcitx::Text preedit(buffer_.userInput(), fcitx::TextFormatFlag::HighLight);
-    inputPanel.setClientPreedit(preedit);
-  } else {
-    fcitx::Text preedit(buffer_.userInput());
-    inputPanel.setPreedit(preedit);
-  }
-  ic_->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
-  ic_->updatePreedit();
-}
-
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");
   if (conv_ == reinterpret_cast<iconv_t>(-1)) {

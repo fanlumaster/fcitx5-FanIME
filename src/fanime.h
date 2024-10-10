@@ -27,7 +27,6 @@ public:
   void keyEvent(fcitx::KeyEvent &keyEvent);
   void setCode(std::string code);
   void updateUI();
-  void updateUIForNextPage();
   // 清除 buffer，更新 UI
   void reset() {
     buffer_.clear();
