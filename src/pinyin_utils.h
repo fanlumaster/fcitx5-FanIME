@@ -16,8 +16,8 @@ public:
   static std::unordered_map<std::string, std::string> zero_sm_keymaps_reversed;
   static std::unordered_map<std::string, std::string> ym_keymaps;
   static std::unordered_map<std::string, std::string> ym_keymaps_reversed;
-
   static std::unordered_set<std::string> &quanpin_set;
+  static std::unordered_map<std::string, std::string> &helpcode_keymap;
   static std::string cvt_single_sp_to_pinyin(std::string sp_str);
   static std::string pinyin_segmentation(std::string sp_str);
 };

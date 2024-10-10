@@ -1,5 +1,6 @@
 #include "pinyin_utils.h"
 #include <vector>
+#include <boost/algorithm/string.hpp>
 
 std::unordered_map<std::string, std::string> PinyinUtil::sm_keymaps{{"sh", "u"}, {"ch", "i"}, {"zh", "v"}};
 
@@ -9,7 +10,7 @@ std::unordered_map<std::string, std::string> PinyinUtil::zero_sm_keymaps_reverse
 std::unordered_map<std::string, std::string> PinyinUtil::ym_keymaps{{"iu", "q"}, {"ei", "w"}, {"e", "e"}, {"uan", "r"}, {"ue", "t"}, {"ve", "t"}, {"un", "y"}, {"u", "u"}, {"i", "i"}, {"uo", "o"}, {"o", "o"}, {"ie", "p"}, {"a", "a"}, {"ong", "s"}, {"iong", "s"}, {"ai", "d"}, {"en", "f"}, {"eng", "g"}, {"ang", "h"}, {"an", "j"}, {"uai", "k"}, {"ing", "k"}, {"uang", "l"}, {"iang", "l"}, {"ou", "z"}, {"ua", "x"}, {"ia", "x"}, {"ao", "c"}, {"ui", "v"}, {"v", "v"}, {"in", "b"}, {"iao", "n"}, {"ian", "m"}};
 std::unordered_map<std::string, std::string> PinyinUtil::ym_keymaps_reversed{{"q", "iu"}, {"w", "ei"}, {"e", "e"}, {"r", "uan"}, {"t", "ve"}, {"y", "un"}, {"u", "u"}, {"i", "i"}, {"o", "o"}, {"p", "ie"}, {"a", "a"}, {"s", "iong"}, {"d", "ai"}, {"f", "en"}, {"g", "eng"}, {"h", "ang"}, {"j", "an"}, {"k", "ing"}, {"l", "iang"}, {"z", "ou"}, {"x", "ia"}, {"c", "ao"}, {"v", "v"}, {"b", "in"}, {"n", "iao"}, {"m", "ian"}};
 
-std::unordered_set<std::string> &initialize() {
+std::unordered_set<std::string> &initialize_quanpin_set() {
   static std::unordered_set<std::string> tmp_set;
   std::ifstream pinyin_path("/home/sonnycalcr/EDisk/CppCodes/IMECodes/fcitx5-FanIME/assets/pinyin.txt");
   std::string line;
@@ -19,8 +20,19 @@ std::unordered_set<std::string> &initialize() {
   }
   return tmp_set;
 }
+std::unordered_set<std::string> &PinyinUtil::quanpin_set = initialize_quanpin_set();
 
-std::unordered_set<std::string> &PinyinUtil::quanpin_set = initialize();
+std::unordered_map<std::string, std::string> &initialize_helpcode_keymap() {
+  static std::unordered_map<std::string, std::string> tmp_map;
+  std::ifstream helpcode_path("/home/sonnycalcr/.local/share/fcitx5-fanyime/helpcode.txt");
+  std::string line;
+  while (std::getline(helpcode_path, line)) {
+    size_t pos = line.find('=');
+    tmp_map[line.substr(0, pos)] = line.substr(pos + 1, 2);
+  }
+  return tmp_map;
+}
+std::unordered_map<std::string, std::string> &PinyinUtil::helpcode_keymap = initialize_helpcode_keymap();
 
 /*
   把小鹤双拼转换为拼音(全拼)
