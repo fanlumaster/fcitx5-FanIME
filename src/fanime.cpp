@@ -277,7 +277,6 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
 }
 
 void FanimeState::setCode(std::string code) {
-  // TODO: 重写
   buffer_.clear();
   buffer_.type(code);
   updateUI();
