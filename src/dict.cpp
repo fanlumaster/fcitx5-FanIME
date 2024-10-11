@@ -56,7 +56,7 @@ std::vector<std::string> DictionaryUlPb::generate(const std::string code) {
     std::string s = single_han_list[code[0] - 'a'];
     // logger->info("fanyfull " + s);
     for (size_t i = 0; i < s.length();) {
-      size_t cplen = PinyinUtil::getFirstCharSize(s);
+      size_t cplen = PinyinUtil::get_first_char_size(s.substr(i, s.size() - i));
       candidateList.push_back(s.substr(i, cplen));
       i += cplen;
     }

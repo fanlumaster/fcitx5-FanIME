@@ -84,7 +84,7 @@ public:
     long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
     for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
       if (i < vec_size) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE] + PinyinUtil::compute_helpcodes(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]));
       }
     }
     if (vec_size == 0) {
@@ -106,7 +106,7 @@ public:
     long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE;
     for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
       if (i < vec_size) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE] + PinyinUtil::compute_helpcodes(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]));
       }
     }
     if (vec_size == 0) {
@@ -150,9 +150,9 @@ private:
     if (code_.size() > 1 && code_.size() % 2) {
       auto tmp_cand_list = dict.generate(code_.substr(0, code_.size() - 1));
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::getFirstCharSize(cand);
+        size_t cplen = PinyinUtil::get_first_char_size(cand);
         if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
-          cur_candidates_.push_back(cand + "(" + PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] + ")");
+          cur_candidates_.push_back(cand);
         }
       }
       auto tmp_cand_list_02 = dict.generate(code_);
@@ -162,9 +162,10 @@ private:
     }
     cur_page_ = 0;
     long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
+    // 放到实际的候选列表里面去
     for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
       if (i < vec_size) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i]);
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i]));
       }
     }
     if (vec_size == 0) {

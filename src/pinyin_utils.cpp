@@ -105,7 +105,7 @@ std::string PinyinUtil::pinyin_segmentation(std::string sp_str) {
   return res;
 }
 
-std::string::size_type PinyinUtil::getFirstCharSize(std::string words) {
+std::string::size_type PinyinUtil::get_first_char_size(std::string words) {
   size_t cplen = 1;
   // https://en.wikipedia.org/wiki/UTF-8#Description
   if ((words[0] & 0xf8) == 0xf0)
@@ -117,4 +117,39 @@ std::string::size_type PinyinUtil::getFirstCharSize(std::string words) {
   if (cplen > words.length())
     cplen = 1;
   return cplen;
+}
+
+std::string::size_type PinyinUtil::cnt_han_chars(std::string words) {
+  size_t index = 0, cnt = 0;
+  while (index < words.size()) {
+    size_t cplen = get_first_char_size(words.substr(index, words.size() - index));
+    index += cplen;
+    cnt += 1;
+  }
+  return cnt;
+}
+
+std::string PinyinUtil::compute_helpcodes(std::string words) {
+  std::string helpcodes("");
+  if (cnt_han_chars(words) == 1) {
+    if (helpcode_keymap.count(words)) {
+      helpcodes += helpcode_keymap[words];
+    }
+  } else {
+    size_t index = 0;
+    while (index < words.size()) {
+      size_t cplen = get_first_char_size(words.substr(index, words.size() - index));
+      std::string cur_han(words.substr(index, cplen));
+      if (helpcode_keymap.count(cur_han)) {
+        helpcodes += helpcode_keymap[cur_han].substr(0, 1);
+      } else {
+        return "";
+      }
+      index += cplen;
+    }
+  }
+  if (helpcodes.size() > 0) {
+    helpcodes = "(" + helpcodes + ")";
+  }
+  return helpcodes;
 }
