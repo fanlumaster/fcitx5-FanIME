@@ -56,16 +56,7 @@ std::vector<std::string> DictionaryUlPb::generate(const std::string code) {
     std::string s = single_han_list[code[0] - 'a'];
     // logger->info("fanyfull " + s);
     for (size_t i = 0; i < s.length();) {
-      int cplen = 1;
-      // https://en.wikipedia.org/wiki/UTF-8#Description
-      if ((s[i] & 0xf8) == 0xf0)
-        cplen = 4;
-      else if ((s[i] & 0xf0) == 0xe0)
-        cplen = 3;
-      else if ((s[i] & 0xe0) == 0xc0)
-        cplen = 2;
-      if ((i + cplen) > s.length())
-        cplen = 1;
+      size_t cplen = PinyinUtil::getFirstCharSize(s);
       candidateList.push_back(s.substr(i, cplen));
       i += cplen;
     }

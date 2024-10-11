@@ -20,6 +20,7 @@ public:
   static std::unordered_map<std::string, std::string> &helpcode_keymap;
   static std::string cvt_single_sp_to_pinyin(std::string sp_str);
   static std::string pinyin_segmentation(std::string sp_str);
+  static std::string::size_type getFirstCharSize(std::string words);
 };
 
 #endif // PINYIN_UTILS_H

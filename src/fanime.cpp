@@ -150,16 +150,7 @@ private:
     if (code_.size() > 1 && code_.size() % 2) {
       auto tmp_cand_list = dict.generate(code_.substr(0, code_.size() - 1));
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = 1;
-        // https://en.wikipedia.org/wiki/UTF-8#Description
-        if ((cand[0] & 0xf8) == 0xf0)
-          cplen = 4;
-        else if ((cand[0] & 0xf0) == 0xe0)
-          cplen = 3;
-        else if ((cand[0] & 0xe0) == 0xc0)
-          cplen = 2;
-        if (cplen > cand.length())
-          cplen = 1;
+        size_t cplen = PinyinUtil::getFirstCharSize(cand);
         if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
           cur_candidates_.push_back(cand + "(" + PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] + ")");
         }
