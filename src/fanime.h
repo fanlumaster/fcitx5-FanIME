@@ -22,15 +22,13 @@ public:
   void setCode(std::string code);
   void updateUI();
   // 清除 buffer，更新 UI
-  void reset() {
-    buffer_.clear();
-    updateUI();
-  }
+  void reset();
 
 private:
   FanimeEngine *engine_;
   fcitx::InputContext *ic_;
   fcitx::InputBuffer buffer_{{fcitx::InputBufferOption::AsciiOnly, fcitx::InputBufferOption::FixedCursor}};
+  bool use_fullhelpcode_ = false;
   static std::unique_ptr<::Log> logger;
 };
 
@@ -50,6 +48,11 @@ public:
   FCITX_ADDON_DEPENDENCY_LOADER(quickphrase, instance_->addonManager());
   FCITX_ADDON_DEPENDENCY_LOADER(punctuation, instance_->addonManager());
 
+  bool get_use_fullhelpcode() { return use_fullhelpcode_; }
+  void set_use_fullhelpcode(bool flag) { use_fullhelpcode_ = flag; }
+  std::string get_raw_pinyin() { return raw_pinyin; }
+  void set_raw_pinyin(std::string pinyin) { raw_pinyin = pinyin; }
+
 private:
   FCITX_ADDON_DEPENDENCY_LOADER(chttrans, instance_->addonManager());
   FCITX_ADDON_DEPENDENCY_LOADER(fullwidth, instance_->addonManager());
@@ -57,6 +60,9 @@ private:
   fcitx::Instance *instance_;
   fcitx::FactoryFor<FanimeState> factory_;
   iconv_t conv_;
+  // TODO: 后续把这几个辅助码相关的变量抽象成一个简单类
+  bool use_fullhelpcode_ = false;
+  std::string raw_pinyin;
 };
 
 class FanimeEngineFactory : public fcitx::AddonFactory {

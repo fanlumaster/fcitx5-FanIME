@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 #include <boost/locale.hpp>
+#include <chrono>
 
 namespace {
 
@@ -62,7 +63,11 @@ public:
     boost::algorithm::to_lower(code_);
     setPageable(this);
     setCursorMovable(this);
-    cand_size = generate();               // generate actually
+    auto start = std::chrono::high_resolution_clock::now();
+    cand_size = generate(); // generate actually
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration_ms = end - start;
+    FCITX_INFO() << "fany generate time: " << duration_ms.count();
     for (int i = 0; i < cand_size; i++) { // generate indices of candidate window
       const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
       labels_[i].append(label);
@@ -147,7 +152,47 @@ public:
 private:
   // generate words
   int generate() {
-    if (code_.size() > 1 && code_.size() % 2) {
+    if (engine_->get_use_fullhelpcode()) {
+      auto tmp_cand_list = dict.generate(engine_->get_raw_pinyin());
+      if (engine_->get_raw_pinyin().size() == 2) {
+        if (code_.size() == 3) {
+          for (const auto &cand : tmp_cand_list) {
+            size_t cplen = PinyinUtil::get_first_char_size(cand);
+            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+              cur_candidates_.push_back(cand);
+            }
+          }
+        } else if (code_.size() == 4) {
+          for (const auto &cand : tmp_cand_list) {
+            size_t cplen = PinyinUtil::get_first_char_size(cand);
+            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] == code_.substr(2, 2)) {
+              cur_candidates_.push_back(cand);
+            }
+          }
+        }
+      } else { // engine_->get_raw_pinyin().size() == 4
+        if (code_.size() == 5) {
+          for (const auto &cand : tmp_cand_list) {
+            size_t cplen = PinyinUtil::get_first_char_size(cand);
+            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+              cur_candidates_.push_back(cand);
+            }
+          }
+        } else if (code_.size() == 6) {
+          for (const auto &cand : tmp_cand_list) {
+            size_t cplen = PinyinUtil::get_first_char_size(cand);
+            // clang-format off
+            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen))
+             && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 2]
+             && PinyinUtil::helpcode_keymap.count(cand.substr(cplen, cand.size() - cplen))
+             && PinyinUtil::helpcode_keymap[cand.substr(cplen, cand.size() - cplen)][0] == code_[code_.size() - 1]) {
+              cur_candidates_.push_back(cand);
+            }
+            // clang-format on
+          }
+        }
+      }
+    } else if (code_.size() > 1 && code_.size() % 2) {
       auto tmp_cand_list = dict.generate(code_.substr(0, code_.size() - 1));
       for (const auto &cand : tmp_cand_list) {
         size_t cplen = PinyinUtil::get_first_char_size(cand);
@@ -209,7 +254,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       return;
     }
     // 翻页键的情况，全局默认的是上箭头和下箭头
-    // 向前翻页 -> 上箭头
+    // 向前翻页 -> 上箭头或者
     if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultPrevPage()) || event.key().check(FcitxKey_minus)) {
       if (auto *pageable = candidateList->toPageable(); pageable && pageable->hasPrev()) {
         event.accept();
@@ -219,9 +264,17 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       return event.filterAndAccept();
     }
 
-    // 向后翻页
-    if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultNextPage()) || event.key().check(FcitxKey_equal)) {
+    // 向后翻页或者 TAB 键
+    if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultNextPage()) || event.key().check(FcitxKey_equal) || event.key().check(FcitxKey_Tab)) {
       if (auto *pageable = candidateList->toPageable(); pageable && pageable->hasNext()) {
+        if (event.key().check(FcitxKey_Tab)) {
+          // FCITX_INFO() << "buffer_ " << buffer_.userInput() << " " << PinyinUtil::pinyin_segmentation(buffer_.userInput());
+          // 只有单字和双字可以用完整的辅助码
+          if ((buffer_.userInput().size() == 2 && PinyinUtil::pinyin_segmentation(buffer_.userInput()).size() == 2) || (buffer_.userInput().size() == 4 && PinyinUtil::pinyin_segmentation(buffer_.userInput()).size() == 5)) {
+            engine_->set_use_fullhelpcode(true);
+            engine_->set_raw_pinyin(buffer_.userInput());
+          }
+        }
         pageable->next();
         ic_->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
       }
@@ -268,7 +321,13 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     }
   } else { // current text buffer is not empty
     if (event.key().check(FcitxKey_BackSpace)) {
-      buffer_.backspace();
+      // 取消使用完整的辅助码
+      if (buffer_.userInput() == engine_->get_raw_pinyin() && engine_->get_use_fullhelpcode()) {
+        engine_->set_use_fullhelpcode(false);
+        engine_->set_raw_pinyin("");
+      } else {
+        buffer_.backspace();
+      }
       updateUI();
       return event.filterAndAccept();
     }
@@ -316,6 +375,13 @@ void FanimeState::updateUI() {
   ic_->updatePreedit();
 }
 
+void FanimeState::reset() {
+  buffer_.clear();
+  engine_->set_use_fullhelpcode(false);
+  engine_->set_raw_pinyin("");
+  updateUI();
+}
+
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");
   if (conv_ == reinterpret_cast<iconv_t>(-1)) {
@@ -350,6 +416,8 @@ void FanimeEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEven
 
 void FanimeEngine::reset(const fcitx::InputMethodEntry &, fcitx::InputContextEvent &event) {
   auto *state = event.inputContext()->propertyFor(&factory_);
+  set_use_fullhelpcode(false);
+  set_raw_pinyin("");
   state->reset();
 }
 
