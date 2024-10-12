@@ -382,6 +382,8 @@ void FanimeState::reset() {
   updateUI();
 }
 
+fcitx::InputBuffer &FanimeState::getBuffer() { return buffer_; }
+
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");
   if (conv_ == reinterpret_cast<iconv_t>(-1)) {
@@ -401,6 +403,18 @@ void FanimeEngine::activate(const fcitx::InputMethodEntry &entry, fcitx::InputCo
       inputContext->statusArea().addAction(fcitx::StatusGroup::InputMethod, action);
     }
   }
+}
+
+void FanimeEngine::deactivate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) {
+  auto *inputContext = event.inputContext();
+  do {
+    if (event.type() != fcitx::EventType::InputContextSwitchInputMethod) {
+      break;
+    }
+    FanimeState *state = inputContext->propertyFor(&factory_);
+    inputContext->commitString(state->getBuffer().userInput()); // 切换输入法到英文时，原样 commit 已经输入的字符串
+  } while (0);
+  reset(entry, event);
 }
 
 void FanimeEngine::keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEvent &keyEvent) {

@@ -23,6 +23,7 @@ public:
   void updateUI();
   // 清除 buffer，更新 UI
   void reset();
+  fcitx::InputBuffer& getBuffer();
 
 private:
   FanimeEngine *engine_;
@@ -37,6 +38,7 @@ public:
   FanimeEngine(fcitx::Instance *instance);
 
   void activate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) override;
+  void deactivate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) override;
   void keyEvent(const fcitx::InputMethodEntry &entry, fcitx::KeyEvent &keyEvent) override;
 
   void reset(const fcitx::InputMethodEntry &, fcitx::InputContextEvent &event) override;
