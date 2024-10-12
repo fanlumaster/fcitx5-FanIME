@@ -142,11 +142,11 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string sp_str, std::
   }
   std::string sql;
   bool need_filtering = false;
-  if (all_entire_pinyin) {
+  if (all_entire_pinyin) { // 拼音分词全部是全拼
     sql = "select * from xiaoheulpbtbl where key = '" + sp_str + "' order by weight desc limit 80;";
-  } else if (all_jp) {
+  } else if (all_jp) { // 拼音分词全部是简拼
     sql = "select * from xiaoheulpbtbl where jp = '" + sp_str + "' order by weight desc limit 80;";
-  } else if (jp_cnt == 1) {
+  } else if (jp_cnt == 1) { // 拼音分词只有一个是简拼
     std::string sql_param0("");
     std::string sql_param1("");
     for (std::vector<std::string>::size_type i = 0; i < pinyin_list.size(); i++) {
