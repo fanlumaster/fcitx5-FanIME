@@ -23,6 +23,7 @@ public:
   static std::string::size_type get_first_char_size(std::string words);
   static std::string::size_type cnt_han_chars(std::string words);
   static std::string compute_helpcodes(std::string words);
+  static std::string extract_preview(std::string candidate);
 };
 
 #endif // PINYIN_UTILS_H

@@ -364,12 +364,15 @@ void FanimeState::updateUI() {
   if (buffer_.size() > 0) { // 已经输入了拼音字符
     inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
   }
-  if (ic_->capabilityFlags().test(fcitx::CapabilityFlag::Preedit)) {
-    fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()), fcitx::TextFormatFlag::HighLight);
-    inputPanel.setClientPreedit(preedit);
+  fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()));
+  inputPanel.setPreedit(preedit); // 嵌在候选框中的
+  // inputPanel.setClientPreedit(clientPreedit); // 嵌在应用程序中的
+  if (buffer_.size() > 0) {
+    fcitx::Text clientPreedit(PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::HighLight);
+    inputPanel.setClientPreedit(clientPreedit); // 嵌在应用程序中的
   } else {
-    fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()));
-    inputPanel.setPreedit(preedit);
+    fcitx::Text clientPreedit("");
+    inputPanel.setClientPreedit(clientPreedit); // 嵌在应用程序中的
   }
   ic_->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
   ic_->updatePreedit();

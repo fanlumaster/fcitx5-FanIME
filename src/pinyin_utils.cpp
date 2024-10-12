@@ -153,3 +153,11 @@ std::string PinyinUtil::compute_helpcodes(std::string words) {
   }
   return helpcodes;
 }
+
+std::string PinyinUtil::extract_preview(std::string candidate) {
+  size_t start_pos = candidate.find('(');
+  if (start_pos != std::string::npos) {
+    return candidate.substr(0, start_pos);
+  }
+  return candidate;
+}
