@@ -214,7 +214,7 @@ private:
       }
     }
     if (vec_size == 0) {
-      candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "😍");
+      candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "");
       return 1;
     }
     return vec_size;
