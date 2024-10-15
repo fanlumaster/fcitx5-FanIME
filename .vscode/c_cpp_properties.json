@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": [
+        "${workspaceFolder}/src/",
+        "/usr/include/Fcitx5/Utils/",
+        "/usr/include/Fcitx5/Utils/fcitx-utils/",
+        "/usr/include/Fcitx5/Core/",
+        "/usr/include/Fcitx5/Config/",
+        "/usr/include/Fcitx5/Module/",
+        "/usr/include/Fcitx5/Module/fcitx-module/punctuation/",
+        "/usr/include/Fcitx5/Module/fcitx-module/quickphrase/"
+      ],
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerPath": "/usr/bin/g++",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}
