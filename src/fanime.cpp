@@ -209,6 +209,8 @@ private:
     if (engine_->get_use_fullhelpcode()) {
       handle_fullhelpcode();
     } else if (code_.size() > 1 && code_.size() % 2) { // 默认的单码辅助
+      // TODO: 对于两字、三字词，使最后一个字也可以成为辅助码
+      handle_singlehelpcode();
     } else {
       cur_candidates_ = dict.generate(code_);
     }
@@ -217,7 +219,11 @@ private:
     // 放到实际的候选列表里面去
     for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
       if (i < vec_size) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i]));
+        if (PinyinUtil::cnt_han_chars(cur_candidates_[i]) > 2) {
+          candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i].substr(0, PinyinUtil::get_first_char_size(cur_candidates_[i]))));
+        } else {
+          candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i]));
+        }
       }
     }
     if (vec_size == 0) {

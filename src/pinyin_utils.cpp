@@ -119,6 +119,9 @@ std::string::size_type PinyinUtil::get_first_char_size(std::string words) {
   return cplen;
 }
 
+/*
+  统计汉字的个数
+*/
 std::string::size_type PinyinUtil::cnt_han_chars(std::string words) {
   size_t index = 0, cnt = 0;
   while (index < words.size()) {
