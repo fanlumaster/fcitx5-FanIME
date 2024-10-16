@@ -150,58 +150,65 @@ public:
   int cursorIndex() const override { return cursor_; }
 
 private:
-  // generate words
-  int generate() {
-    if (engine_->get_use_fullhelpcode()) {
-      auto tmp_cand_list = dict.generate(engine_->get_raw_pinyin());
-      if (engine_->get_raw_pinyin().size() == 2) {
-        if (code_.size() == 3) {
-          for (const auto &cand : tmp_cand_list) {
-            size_t cplen = PinyinUtil::get_first_char_size(cand);
-            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
-              cur_candidates_.push_back(cand);
-            }
-          }
-        } else if (code_.size() == 4) {
-          for (const auto &cand : tmp_cand_list) {
-            size_t cplen = PinyinUtil::get_first_char_size(cand);
-            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] == code_.substr(2, 2)) {
-              cur_candidates_.push_back(cand);
-            }
+  void handle_fullhelpcode() {
+    auto tmp_cand_list = dict.generate(engine_->get_raw_pinyin());
+    if (engine_->get_raw_pinyin().size() == 2) {
+      if (code_.size() == 3) {
+        for (const auto &cand : tmp_cand_list) {
+          size_t cplen = PinyinUtil::get_first_char_size(cand);
+          if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+            cur_candidates_.push_back(cand);
           }
         }
-      } else { // engine_->get_raw_pinyin().size() == 4
-        if (code_.size() == 5) {
-          for (const auto &cand : tmp_cand_list) {
-            size_t cplen = PinyinUtil::get_first_char_size(cand);
-            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
-              cur_candidates_.push_back(cand);
-            }
+      } else if (code_.size() == 4) {
+        for (const auto &cand : tmp_cand_list) {
+          size_t cplen = PinyinUtil::get_first_char_size(cand);
+          if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] == code_.substr(2, 2)) {
+            cur_candidates_.push_back(cand);
           }
-        } else if (code_.size() == 6) {
-          for (const auto &cand : tmp_cand_list) {
-            size_t cplen = PinyinUtil::get_first_char_size(cand);
-            // clang-format off
+        }
+      }
+    } else { // engine_->get_raw_pinyin().size() == 4
+      if (code_.size() == 5) {
+        for (const auto &cand : tmp_cand_list) {
+          size_t cplen = PinyinUtil::get_first_char_size(cand);
+          if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+            cur_candidates_.push_back(cand);
+          }
+        }
+      } else if (code_.size() == 6) {
+        for (const auto &cand : tmp_cand_list) {
+          size_t cplen = PinyinUtil::get_first_char_size(cand);
+          // clang-format off
             if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen))
              && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 2]
              && PinyinUtil::helpcode_keymap.count(cand.substr(cplen, cand.size() - cplen))
              && PinyinUtil::helpcode_keymap[cand.substr(cplen, cand.size() - cplen)][0] == code_[code_.size() - 1]) {
               cur_candidates_.push_back(cand);
             }
-            // clang-format on
-          }
+          // clang-format on
         }
       }
-    } else if (code_.size() > 1 && code_.size() % 2) {
-      auto tmp_cand_list = dict.generate(code_.substr(0, code_.size() - 1));
-      for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::get_first_char_size(cand);
-        if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
-          cur_candidates_.push_back(cand);
-        }
+    }
+  }
+
+  void handle_singlehelpcode() {
+    auto tmp_cand_list_with_helpcode_trimed = dict.generate(code_.substr(0, code_.size() - 1));
+    for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
+      size_t cplen = PinyinUtil::get_first_char_size(cand);
+      if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+        cur_candidates_.push_back(cand);
       }
-      auto tmp_cand_list_02 = dict.generate(code_);
-      cur_candidates_.insert(cur_candidates_.end(), tmp_cand_list_02.begin(), tmp_cand_list_02.end());
+    }
+    auto tmp_cand_list = dict.generate(code_);
+    cur_candidates_.insert(cur_candidates_.end(), tmp_cand_list.begin(), tmp_cand_list.end());
+  }
+
+  // generate words
+  int generate() {
+    if (engine_->get_use_fullhelpcode()) {
+      handle_fullhelpcode();
+    } else if (code_.size() > 1 && code_.size() % 2) { // 默认的单码辅助
     } else {
       cur_candidates_ = dict.generate(code_);
     }
