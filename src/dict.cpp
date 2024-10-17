@@ -159,7 +159,7 @@ std::vector<std::pair<std::string, std::string>> DictionaryUlPb::select_key_and_
   return candidateList;
 }
 
-std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string &sp_str, std::vector<std::string> &pinyin_list) {
+std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list) {
   bool all_entire_pinyin = true;
   bool all_jp = true;
   std::vector<std::string>::size_type jp_cnt = 0; // 简拼的数量
