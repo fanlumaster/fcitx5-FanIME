@@ -58,5 +58,5 @@ private:
       - generated sql
       - whether needed to filter
   */
-  std::pair<std::string, bool> build_sql(std::string sp_str, std::vector<std::string> pinyin_list);
+  std::pair<std::string, bool> build_sql(std::string& sp_str, std::vector<std::string>& pinyin_list);
 };

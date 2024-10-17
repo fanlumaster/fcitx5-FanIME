@@ -159,7 +159,7 @@ std::vector<std::pair<std::string, std::string>> DictionaryUlPb::select_key_and_
   return candidateList;
 }
 
-std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string sp_str, std::vector<std::string> pinyin_list) {
+std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string &sp_str, std::vector<std::string> &pinyin_list) {
   bool all_entire_pinyin = true;
   bool all_jp = true;
   std::vector<std::string>::size_type jp_cnt = 0; // 简拼的数量
@@ -173,11 +173,12 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string sp_str, std::
     }
   }
   std::string sql;
+  std::string table = "xiaoheulpbtbl";
   bool need_filtering = false;
   if (all_entire_pinyin) { // 拼音分词全部是全拼
-    sql = "select * from xiaoheulpbtbl where key = '" + sp_str + "' order by weight desc limit 80;";
+    sql = "select * from " + table + " where key = '" + sp_str + "' order by weight desc limit 80;";
   } else if (all_jp) { // 拼音分词全部是简拼
-    sql = "select * from xiaoheulpbtbl where jp = '" + sp_str + "' order by weight desc limit 80;";
+    sql = "select * from " + table + " where jp = '" + sp_str + "' order by weight desc limit 80;";
   } else if (jp_cnt == 1) { // 拼音分词只有一个是简拼
     std::string sql_param0("");
     std::string sql_param1("");
@@ -190,14 +191,14 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(std::string sp_str, std::
         sql_param1 += pinyin_list[i];
       }
     }
-    sql = "select * from xiaoheulpbtbl where key >= '" + sql_param0 + "' and key <= '" + sql_param1 + "' order by  length(key) asc, weight desc limit 80;";
+    sql = "select * from " + table + " where key >= '" + sql_param0 + "' and key <= '" + sql_param1 + "' order by  length(key) asc, weight desc limit 80;";
   } else { // 既不是纯粹的完整的拼音，也不是纯粹的简拼，并且简拼的数量严格大于 1
     need_filtering = true;
     std::string sql_param("");
     for (std::string &cur_pinyin : pinyin_list) {
       sql_param += cur_pinyin.substr(0, 1);
     }
-    sql = "select * from xiaoheulpbtbl where jp = '" + sql_param + "';"; // 不能用 limit，要全部取出之后会有过滤
+    sql = "select * from " + table + " where jp = '" + sql_param + "';"; // 不能用 limit，要全部取出之后会有过滤
   }
   return std::make_pair(sql, need_filtering);
 }
