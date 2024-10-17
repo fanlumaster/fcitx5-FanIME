@@ -6,6 +6,7 @@
 #include <sqlite3.h>
 #include <memory>
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 #include "log.h"
 
@@ -32,6 +33,7 @@ private:
   std::unordered_map<std::string, std::vector<std::string>> dict_map;
   std::string log_path = "/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log";
   std::unique_ptr<Log> logger;
+  int default_candicate_page_limit = 40;
 
   static std::vector<std::string> alpha_list;
   static std::vector<std::string> single_han_list;

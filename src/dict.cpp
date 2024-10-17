@@ -1,6 +1,7 @@
 #include "dict.h"
 #include "pinyin_utils.h"
 #include <sqlite3.h>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <regex>
@@ -173,12 +174,13 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
     }
   }
   std::string sql;
+  std::string base_sql("select * from %1% where %2% = '%3%' order by weight desc limit %4%;");
   std::string table = "xiaoheulpbtbl";
   bool need_filtering = false;
   if (all_entire_pinyin) { // 拼音分词全部是全拼
-    sql = "select * from " + table + " where key = '" + sp_str + "' order by weight desc limit 80;";
+    sql = boost::str(boost::format(base_sql) % table % "key" % sp_str % default_candicate_page_limit);
   } else if (all_jp) { // 拼音分词全部是简拼
-    sql = "select * from " + table + " where jp = '" + sp_str + "' order by weight desc limit 80;";
+    sql = boost::str(boost::format(base_sql) % table % "jp" % sp_str % default_candicate_page_limit);
   } else if (jp_cnt == 1) { // 拼音分词只有一个是简拼
     std::string sql_param0("");
     std::string sql_param1("");
@@ -191,14 +193,14 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
         sql_param1 += pinyin_list[i];
       }
     }
-    sql = "select * from " + table + " where key >= '" + sql_param0 + "' and key <= '" + sql_param1 + "' order by  length(key) asc, weight desc limit 80;";
+    sql = boost::str(boost::format("select * from %1% where key >= '%2%' and key <= '%3%' order by length(key) asc, weight desc limit %4%;") % table % sql_param0 % sql_param1 % default_candicate_page_limit);
   } else { // 既不是纯粹的完整的拼音，也不是纯粹的简拼，并且简拼的数量严格大于 1
     need_filtering = true;
     std::string sql_param("");
     for (std::string &cur_pinyin : pinyin_list) {
       sql_param += cur_pinyin.substr(0, 1);
     }
-    sql = "select * from " + table + " where jp = '" + sql_param + "';"; // 不能用 limit，要全部取出之后会有过滤
+    sql = boost::str(boost::format("select * from %1% where jp = '%2%';") % table % sql_param); // do not use limit, we need retrive all data and then filter
   }
   return std::make_pair(sql, need_filtering);
 }
