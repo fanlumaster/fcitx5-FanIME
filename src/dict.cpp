@@ -1,6 +1,7 @@
 #include "dict.h"
 #include "pinyin_utils.h"
 #include <sqlite3.h>
+#include <tuple>
 #include <utility>
 #include <regex>
 
@@ -50,46 +51,77 @@ DictionaryUlPb::DictionaryUlPb() {
 }
 
 std::vector<std::string> DictionaryUlPb::generate(const std::string code) {
-  std::vector<std::string> candidateList;
+  std::vector<std::string> candidate_list;
   std::vector<std::string> code_list;
   if (code.size() == 1) {
-    std::string s = single_han_list[code[0] - 'a'];
-    // logger->info("fanyfull " + s);
-    for (size_t i = 0; i < s.length();) {
-      size_t cplen = PinyinUtil::get_first_char_size(s.substr(i, s.size() - i));
-      candidateList.push_back(s.substr(i, cplen));
-      i += cplen;
-    }
+    generate_for_single_char(candidate_list, code);
   } else {
-    // 先给双拼拼音分词
+    // segmentation first
     std::string pinyin_with_seg = PinyinUtil::pinyin_segmentation(code);
-    // logger->info("pinyin_with_seg => " + pinyin_with_seg);
     std::vector<std::string> pinyin_list;
     boost::split(pinyin_list, pinyin_with_seg, boost::is_any_of("'"));
+    // build sql for query
     auto sql_pair = build_sql(code, pinyin_list);
     std::string sql_str = sql_pair.first;
-    if (sql_pair.second) {
+    if (sql_pair.second) { // need to filter
       auto key_value_list = select_key_and_value(sql_str);
-      std::string regex_str("");
-      for (const auto &each_pinyin : pinyin_list) {
-        if (each_pinyin.size() == 2) {
-          regex_str += each_pinyin;
-        } else {
-          regex_str = regex_str + each_pinyin + "[a-z]";
-        }
-      }
-      std::regex pattern(regex_str);
-      for (const auto &each_pair : key_value_list) {
-        if (std::regex_match(each_pair.first, pattern)) {
-          candidateList.push_back(each_pair.second);
-        }
-      }
+      filter_key_value_list(candidate_list, pinyin_list, key_value_list);
     } else {
-      candidateList = select_data(sql_str);
+      candidate_list = select_data(sql_str);
     }
   }
+  return candidate_list;
+}
+
+void DictionaryUlPb::generate_for_single_char(std::vector<std::string> &candidate_list, std::string code) {
+  std::string s = single_han_list[code[0] - 'a'];
+  for (size_t i = 0; i < s.length();) {
+    size_t cplen = PinyinUtil::get_first_char_size(s.substr(i, s.size() - i));
+    candidate_list.push_back(s.substr(i, cplen));
+    i += cplen;
+  }
+}
+
+void DictionaryUlPb::filter_key_value_list(std::vector<std::string> &candidate_list, const std::vector<std::string> &pinyin_list, const std::vector<std::pair<std::string, std::string>> &key_value_list) {
+  std::string regex_str("");
+  for (const auto &each_pinyin : pinyin_list) {
+    if (each_pinyin.size() == 2) {
+      regex_str += each_pinyin;
+    } else {
+      regex_str = regex_str + each_pinyin + "[a-z]";
+    }
+  }
+  std::regex pattern(regex_str);
+  for (const auto &each_pair : key_value_list) {
+    if (std::regex_match(each_pair.first, pattern)) {
+      candidate_list.push_back(each_pair.second);
+    }
+  }
+}
+
+std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::select_complete_data(std::string sql_str) {
+  std::vector<DictionaryUlPb::WordItem> candidateList;
+  sqlite3_stmt *stmt;
+  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
+  if (exit != SQLITE_OK) {
+    // logger->error("sqlite3_prepare_v2 error.");
+  }
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    // clang-format off
+    candidateList.push_back(
+      std::make_tuple(
+        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))),
+        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))),
+        sqlite3_column_int(stmt, 3)
+      )
+    );
+    // clang-format on
+  }
+  sqlite3_finalize(stmt);
   return candidateList;
 }
+
+// generate_with_seg_pinyin
 
 DictionaryUlPb::~DictionaryUlPb() {
   if (db) {
