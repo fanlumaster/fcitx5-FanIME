@@ -64,7 +64,7 @@ public:
   const fcitx::Text &label(int idx) const override { return labels_[idx]; }
 
   const fcitx::CandidateWord &candidate(int idx) const override { return *candidates_[idx]; }
-  int size() const override { return cand_size; }
+  int size() const override { return cand_size_; }
   fcitx::CandidateLayoutHint layoutHint() const override { return fcitx::CandidateLayoutHint::NotSet; }
   bool usedNextBefore() const override { return false; }
   void prev() override;
@@ -87,9 +87,10 @@ private:
   int cur_page_;
   std::string code_;
   int cursor_ = 0;
-  int cand_size = CANDIDATE_SIZE;
-  static DictionaryUlPb dict;
-  static std::unique_ptr<Log> logger;
+  int cand_size_ = CANDIDATE_SIZE;
+  static DictionaryUlPb dict_;
+  static std::unique_ptr<Log> logger_;
+  static boost::circular_buffer<std::vector<std::string>> cached_buffer_;
 
   // generate words
   int generate();
@@ -102,11 +103,11 @@ FanimeCandidateList::FanimeCandidateList(FanimeEngine *engine, fcitx::InputConte
   setPageable(this);
   setCursorMovable(this);
   auto start = std::chrono::high_resolution_clock::now();
-  cand_size = generate(); // generate actually
+  cand_size_ = generate(); // generate actually
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> duration_ms = end - start;
   FCITX_INFO() << "fany generate time: " << duration_ms.count();
-  for (int i = 0; i < cand_size; i++) { // generate indices of candidate window
+  for (int i = 0; i < cand_size_; i++) { // generate indices of candidate window
     const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
     labels_[i].append(label);
     labels_[i].append(". ");
@@ -127,8 +128,8 @@ void FanimeCandidateList::prev() {
   if (vec_size == 0) {
     candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "😍");
   }
-  cand_size = vec_size;
-  for (int i = 0; i < cand_size; i++) { // generate indices of candidate window
+  cand_size_ = vec_size;
+  for (int i = 0; i < cand_size_; i++) { // generate indices of candidate window
     const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
     labels_[i].clear();
     labels_[i].append(label);
@@ -150,8 +151,8 @@ void FanimeCandidateList::next() {
   if (vec_size == 0) {
     candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "😍");
   }
-  cand_size = vec_size;
-  for (int i = 0; i < cand_size; i++) { // generate indices of candidate window
+  cand_size_ = vec_size;
+  for (int i = 0; i < cand_size_; i++) { // generate indices of candidate window
     const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
     labels_[i].clear();
     labels_[i].append(label);
@@ -177,8 +178,10 @@ bool FanimeCandidateList::hasNext() const {
   return false;
 }
 
-DictionaryUlPb FanimeCandidateList::dict = DictionaryUlPb();
-std::unique_ptr<Log> FanimeCandidateList::logger = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
+DictionaryUlPb FanimeCandidateList::dict_ = DictionaryUlPb();
+std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
+
+boost::circular_buffer<std::vector<std::string>> FanimeCandidateList::cached_buffer_(8);
 
 int FanimeCandidateList::generate() {
   if (engine_->get_use_fullhelpcode()) {
@@ -187,7 +190,7 @@ int FanimeCandidateList::generate() {
     // TODO: 对于两字、三字词，使最后一个字也可以成为辅助码
     handle_singlehelpcode();
   } else {
-    cur_candidates_ = dict.generate(code_);
+    cur_candidates_ = dict_.generate(code_);
   }
   cur_page_ = 0;
   long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
@@ -209,7 +212,7 @@ int FanimeCandidateList::generate() {
 }
 
 void FanimeCandidateList::handle_fullhelpcode() {
-  auto tmp_cand_list = dict.generate(engine_->get_raw_pinyin());
+  auto tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
   if (engine_->get_raw_pinyin().size() == 2) {
     if (code_.size() == 3) {
       for (const auto &cand : tmp_cand_list) {
@@ -251,14 +254,14 @@ void FanimeCandidateList::handle_fullhelpcode() {
 }
 
 void FanimeCandidateList::handle_singlehelpcode() {
-  auto tmp_cand_list_with_helpcode_trimed = dict.generate(code_.substr(0, code_.size() - 1));
+  auto tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
     size_t cplen = PinyinUtil::get_first_char_size(cand);
     if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
       cur_candidates_.push_back(cand);
     }
   }
-  auto tmp_cand_list = dict.generate(code_);
+  auto tmp_cand_list = dict_.generate(code_);
   cur_candidates_.insert(cur_candidates_.end(), tmp_cand_list.begin(), tmp_cand_list.end());
 }
 
