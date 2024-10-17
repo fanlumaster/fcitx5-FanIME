@@ -175,7 +175,7 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
   }
   std::string sql;
   std::string base_sql("select * from %1% where %2% = '%3%' order by weight desc limit %4%;");
-  std::string table = "xiaoheulpbtbl";
+  std::string table = choose_tbl(sp_str, pinyin_list.size());
   bool need_filtering = false;
   if (all_entire_pinyin) { // 拼音分词全部是全拼
     sql = boost::str(boost::format(base_sql) % table % "key" % sp_str % default_candicate_page_limit);
@@ -203,4 +203,11 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
     sql = boost::str(boost::format("select * from %1% where jp = '%2%';") % table % sql_param); // do not use limit, we need retrive all data and then filter
   }
   return std::make_pair(sql, need_filtering);
+}
+
+std::string DictionaryUlPb::choose_tbl(const std::string &sp_str, size_t word_len) {
+  std::string base_tbl("tbl_%1%_%2%");
+  if (word_len >= 8)
+    return boost::str(boost::format(base_tbl) % "others" % sp_str[0]);
+  return boost::str(boost::format(base_tbl) % word_len % sp_str[0]);
 }

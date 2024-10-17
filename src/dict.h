@@ -28,7 +28,7 @@ public:
 
 private:
   std::ifstream inputFile;
-  std::string db_path = "/home/sonnycalcr/EDisk/PyCodes/IMECodes/FanyDictForIME/makecikudb/xnheulpb/makedb/jp_version/out/flyciku_with_jp.db";
+  std::string db_path = "/home/sonnycalcr/EDisk/PyCodes/IMECodes/FanyDictForIME/makecikudb/xnheulpb/makedb/separated_jp_version/out/cutted_flyciku_with_jp.db";
   sqlite3 *db = nullptr;
   std::unordered_map<std::string, std::vector<std::string>> dict_map;
   std::string log_path = "/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log";
@@ -60,5 +60,6 @@ private:
       - generated sql
       - whether needed to filter
   */
-  std::pair<std::string, bool> build_sql(const std::string& sp_str, std::vector<std::string>& pinyin_list);
+  std::pair<std::string, bool> build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list);
+  std::string choose_tbl(const std::string &sp_str, size_t word_len);
 };
