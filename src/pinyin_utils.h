@@ -21,6 +21,7 @@ public:
   static std::string cvt_single_sp_to_pinyin(std::string sp_str);
   static std::string pinyin_segmentation(std::string sp_str);
   static std::string::size_type get_first_char_size(std::string words);
+  static std::string::size_type get_last_char_size(std::string words);
   static std::string::size_type cnt_han_chars(std::string words);
   static std::string compute_helpcodes(std::string words);
   static std::string extract_preview(std::string candidate);
