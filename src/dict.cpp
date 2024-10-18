@@ -51,8 +51,8 @@ DictionaryUlPb::DictionaryUlPb() {
   }
 }
 
-std::vector<std::string> DictionaryUlPb::generate(const std::string code) {
-  std::vector<std::string> candidate_list;
+std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {
+  std::vector<DictionaryUlPb::WordItem> candidate_list;
   std::vector<std::string> code_list;
   if (code.size() == 1) {
     generate_for_single_char(candidate_list, code);
@@ -65,25 +65,25 @@ std::vector<std::string> DictionaryUlPb::generate(const std::string code) {
     auto sql_pair = build_sql(code, pinyin_list);
     std::string sql_str = sql_pair.first;
     if (sql_pair.second) { // need to filter
-      auto key_value_list = select_key_and_value(sql_str);
-      filter_key_value_list(candidate_list, pinyin_list, key_value_list);
+      auto key_value_weight_list = select_complete_data(sql_str);
+      filter_key_value_list(candidate_list, pinyin_list, key_value_weight_list);
     } else {
-      candidate_list = select_data(sql_str);
+      candidate_list = select_complete_data(sql_str);
     }
   }
   return candidate_list;
 }
 
-void DictionaryUlPb::generate_for_single_char(std::vector<std::string> &candidate_list, std::string code) {
+void DictionaryUlPb::generate_for_single_char(std::vector<DictionaryUlPb::WordItem> &candidate_list, std::string code) {
   std::string s = single_han_list[code[0] - 'a'];
   for (size_t i = 0; i < s.length();) {
     size_t cplen = PinyinUtil::get_first_char_size(s.substr(i, s.size() - i));
-    candidate_list.push_back(s.substr(i, cplen));
+    candidate_list.push_back(std::make_tuple(code, s.substr(i, cplen), 1));
     i += cplen;
   }
 }
 
-void DictionaryUlPb::filter_key_value_list(std::vector<std::string> &candidate_list, const std::vector<std::string> &pinyin_list, const std::vector<std::pair<std::string, std::string>> &key_value_list) {
+void DictionaryUlPb::filter_key_value_list(std::vector<DictionaryUlPb::WordItem> &candidate_list, const std::vector<std::string> &pinyin_list, const std::vector<DictionaryUlPb::WordItem> &key_value_weight_list) {
   std::string regex_str("");
   for (const auto &each_pinyin : pinyin_list) {
     if (each_pinyin.size() == 2) {
@@ -93,33 +93,11 @@ void DictionaryUlPb::filter_key_value_list(std::vector<std::string> &candidate_l
     }
   }
   std::regex pattern(regex_str);
-  for (const auto &each_pair : key_value_list) {
-    if (std::regex_match(each_pair.first, pattern)) {
-      candidate_list.push_back(each_pair.second);
+  for (const auto &each_tuple : key_value_weight_list) {
+    if (std::regex_match(std::get<0>(each_tuple), pattern)) {
+      candidate_list.push_back(each_tuple);
     }
   }
-}
-
-std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::select_complete_data(std::string sql_str) {
-  std::vector<DictionaryUlPb::WordItem> candidateList;
-  sqlite3_stmt *stmt;
-  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
-  if (exit != SQLITE_OK) {
-    // logger->error("sqlite3_prepare_v2 error.");
-  }
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    // clang-format off
-    candidateList.push_back(
-      std::make_tuple(
-        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))),
-        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))),
-        sqlite3_column_int(stmt, 3)
-      )
-    );
-    // clang-format on
-  }
-  sqlite3_finalize(stmt);
-  return candidateList;
 }
 
 // generate_with_seg_pinyin
@@ -140,6 +118,28 @@ std::vector<std::string> DictionaryUlPb::select_data(std::string sql_str) {
   }
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     candidateList.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))));
+  }
+  sqlite3_finalize(stmt);
+  return candidateList;
+}
+
+std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::select_complete_data(std::string sql_str) {
+  std::vector<DictionaryUlPb::WordItem> candidateList;
+  sqlite3_stmt *stmt;
+  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
+  if (exit != SQLITE_OK) {
+    // logger->error("sqlite3_prepare_v2 error.");
+  }
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    // clang-format off
+    candidateList.push_back(
+      std::make_tuple(
+        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))), // key
+        std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))), // value
+        sqlite3_column_int(stmt, 3)                                                // weight
+      )
+    );
+    // clang-format on
   }
   sqlite3_finalize(stmt);
   return candidateList;

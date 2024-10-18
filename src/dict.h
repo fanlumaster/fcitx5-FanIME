@@ -15,9 +15,10 @@ public:
   using WordItem = std::tuple<std::string, std::string, int>;
 
   /*
-    Return: simple value list of data stored in database table
+    Return: list of complete item data of database table
+e table
   */
-  std::vector<std::string> generate(const std::string code);
+  std::vector<WordItem> generate(const std::string code);
   /*
     Return: list of complete item data of database table
   */
@@ -41,8 +42,8 @@ private:
   /*
     generate list for single char
   */
-  void generate_for_single_char(std::vector<std::string> &candidate_list, std::string code);
-  void filter_key_value_list(std::vector<std::string> &candidate_list, const std::vector<std::string> &pinyin_list, const std::vector<std::pair<std::string, std::string>> &key_value_list);
+  void generate_for_single_char(std::vector<WordItem> &candidate_list, std::string code);
+  void filter_key_value_list(std::vector<WordItem> &candidate_list, const std::vector<std::string> &pinyin_list, const std::vector<WordItem> &key_value_weight_list);
   /*
     Return: list of value data in database table
   */

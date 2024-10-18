@@ -62,7 +62,6 @@ class FanimeCandidateList : public fcitx::CandidateList, public fcitx::PageableC
 public:
   FanimeCandidateList(FanimeEngine *engine, fcitx::InputContext *ic, const std::string &code);
   const fcitx::Text &label(int idx) const override { return labels_[idx]; }
-
   const fcitx::CandidateWord &candidate(int idx) const override { return *candidates_[idx]; }
   int size() const override { return cand_size_; }
   fcitx::CandidateLayoutHint layoutHint() const override { return fcitx::CandidateLayoutHint::NotSet; }
@@ -70,7 +69,6 @@ public:
   void prev() override;
   void next() override;
   bool hasPrev() const override;
-
   bool hasNext() const override;
 
   // TODO: 这里是什么意思
@@ -83,7 +81,7 @@ private:
   fcitx::InputContext *ic_;
   fcitx::Text labels_[CANDIDATE_SIZE];
   std::unique_ptr<FanimeCandidateWord> candidates_[CANDIDATE_SIZE];
-  std::vector<std::string> cur_candidates_;
+  std::vector<DictionaryUlPb::WordItem> cur_candidates_;
   int cur_page_;
   std::string code_;
   int cursor_ = 0;
@@ -122,7 +120,8 @@ void FanimeCandidateList::prev() {
   long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE] + PinyinUtil::compute_helpcodes(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]));
+      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+      candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words));
     }
   }
   if (vec_size == 0) {
@@ -145,7 +144,8 @@ void FanimeCandidateList::next() {
   long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE;
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i + cur_page_ * CANDIDATE_SIZE] + PinyinUtil::compute_helpcodes(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]));
+      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+      candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words));
     }
   }
   if (vec_size == 0) {
@@ -197,10 +197,10 @@ int FanimeCandidateList::generate() {
   // 放到实际的候选列表里面去
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      if (PinyinUtil::cnt_han_chars(cur_candidates_[i]) > 2) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i].substr(0, PinyinUtil::get_first_char_size(cur_candidates_[i]))));
+      if (PinyinUtil::cnt_han_chars(std::get<1>(cur_candidates_[i])) > 2) {
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, std::get<1>(cur_candidates_[i]) + PinyinUtil::compute_helpcodes(std::get<1>(cur_candidates_[i]).substr(0, PinyinUtil::get_first_char_size(std::get<1>(cur_candidates_[i])))));
       } else {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_candidates_[i] + PinyinUtil::compute_helpcodes(cur_candidates_[i]));
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, std::get<1>(cur_candidates_[i]) + PinyinUtil::compute_helpcodes(std::get<1>(cur_candidates_[i])));
       }
     }
   }
@@ -216,15 +216,17 @@ void FanimeCandidateList::handle_fullhelpcode() {
   if (engine_->get_raw_pinyin().size() == 2) {
     if (code_.size() == 3) {
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::get_first_char_size(cand);
-        if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+        std::string cur_han_words = std::get<1>(cand);
+        size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
+        if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1]) {
           cur_candidates_.push_back(cand);
         }
       }
     } else if (code_.size() == 4) {
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::get_first_char_size(cand);
-        if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)] == code_.substr(2, 2)) {
+        std::string cur_han_words = std::get<1>(cand);
+        size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
+        if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)] == code_.substr(2, 2)) {
           cur_candidates_.push_back(cand);
         }
       }
@@ -232,21 +234,23 @@ void FanimeCandidateList::handle_fullhelpcode() {
   } else { // engine_->get_raw_pinyin().size() == 4
     if (code_.size() == 5) {
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::get_first_char_size(cand);
-        if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+        std::string cur_han_words = std::get<1>(cand);
+        size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
+        if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1]) {
           cur_candidates_.push_back(cand);
         }
       }
     } else if (code_.size() == 6) {
       for (const auto &cand : tmp_cand_list) {
-        size_t cplen = PinyinUtil::get_first_char_size(cand);
+        std::string cur_han_words = std::get<1>(cand);
+        size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
         // clang-format off
-            if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen))
-             && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 2]
-             && PinyinUtil::helpcode_keymap.count(cand.substr(cplen, cand.size() - cplen))
-             && PinyinUtil::helpcode_keymap[cand.substr(cplen, cand.size() - cplen)][0] == code_[code_.size() - 1]) {
-              cur_candidates_.push_back(cand);
-            }
+        if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen))
+          && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 2]
+          && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cplen, cur_han_words.size() - cplen))
+          && PinyinUtil::helpcode_keymap[cur_han_words.substr(cplen, cur_han_words.size() - cplen)][0] == code_[code_.size() - 1]) {
+          cur_candidates_.push_back(cand);
+        }
         // clang-format on
       }
     }
@@ -256,8 +260,9 @@ void FanimeCandidateList::handle_fullhelpcode() {
 void FanimeCandidateList::handle_singlehelpcode() {
   auto tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
-    size_t cplen = PinyinUtil::get_first_char_size(cand);
-    if (PinyinUtil::helpcode_keymap.count(cand.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cand.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+    std::string cur_han_words = std::get<1>(cand);
+    size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
+    if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1]) {
       cur_candidates_.push_back(cand);
     }
   }
