@@ -88,11 +88,12 @@ private:
   int cand_size_ = CANDIDATE_SIZE;
   static DictionaryUlPb dict_;
   static std::unique_ptr<Log> logger_;
-  static boost::circular_buffer<std::vector<std::string>> cached_buffer_;
+  static boost::circular_buffer<std::vector<DictionaryUlPb::WordItem>> cached_buffer_;
 
   // generate words
   int generate();
   void handle_fullhelpcode();
+  bool is_need_singlehelpcode();
   void handle_singlehelpcode();
 };
 
@@ -181,14 +182,15 @@ bool FanimeCandidateList::hasNext() const {
 DictionaryUlPb FanimeCandidateList::dict_ = DictionaryUlPb();
 std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
 
-boost::circular_buffer<std::vector<std::string>> FanimeCandidateList::cached_buffer_(8);
+boost::circular_buffer<std::vector<DictionaryUlPb::WordItem>> FanimeCandidateList::cached_buffer_(8);
 
 int FanimeCandidateList::generate() {
   if (engine_->get_use_fullhelpcode()) {
     handle_fullhelpcode();
-  } else if (code_.size() > 1 && code_.size() % 2) { // 默认的单码辅助
+  } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
     // TODO: 对于两字、三字词，使最后一个字也可以成为辅助码
     handle_singlehelpcode();
+    FCITX_INFO() << "这也能辅助？";
   } else {
     cur_candidates_ = dict_.generate(code_);
   }
@@ -205,7 +207,7 @@ int FanimeCandidateList::generate() {
     }
   }
   if (vec_size == 0) {
-    candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, "");
+    candidates_[0] = std::make_unique<FanimeCandidateWord>(engine_, code_);
     return 1;
   }
   return vec_size;
@@ -213,6 +215,7 @@ int FanimeCandidateList::generate() {
 
 void FanimeCandidateList::handle_fullhelpcode() {
   auto tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
+  cached_buffer_.push_back(tmp_cand_list);
   if (engine_->get_raw_pinyin().size() == 2) {
     if (code_.size() == 3) {
       for (const auto &cand : tmp_cand_list) {
@@ -255,6 +258,18 @@ void FanimeCandidateList::handle_fullhelpcode() {
       }
     }
   }
+}
+
+bool FanimeCandidateList::is_need_singlehelpcode() {
+  std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+  bool really = true;
+  for (size_t i = 2; i < seg_pinyin.size(); i += 3) {
+    if (seg_pinyin[i] != '\'') {
+      really = false;
+      break;
+    }
+  }
+  return really;
 }
 
 void FanimeCandidateList::handle_singlehelpcode() {
