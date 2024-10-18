@@ -298,7 +298,6 @@ void FanimeCandidateList::handle_singlehelpcode() {
     if (item.first == code_.substr(0, code_.size() - 1)) {
       tmp_cand_list_with_helpcode_trimed = item.second;
       need_to_query = false;
-      FCITX_INFO() << "used cache";
       break;
     }
   if (need_to_query)
