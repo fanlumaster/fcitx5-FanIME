@@ -188,7 +188,6 @@ int FanimeCandidateList::generate() {
   if (engine_->get_use_fullhelpcode()) {
     handle_fullhelpcode();
   } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
-    // TODO: 对于两字、三字词，使最后一个字也可以成为辅助码
     handle_singlehelpcode();
   } else {
     bool need_query = true;
@@ -302,13 +301,20 @@ void FanimeCandidateList::handle_singlehelpcode() {
     }
   if (need_to_query)
     tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
+  std::vector<DictionaryUlPb::WordItem> last_helpcode_matched_list;
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
     std::string cur_han_words = std::get<1>(cand);
+    size_t han_cnt = PinyinUtil::cnt_han_chars(cur_han_words);
     size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
-    if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1]) {
+    size_t last_cplen = PinyinUtil::get_last_char_size(cur_han_words);
+    if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1])
       cur_candidates_.push_back(cand);
-    }
+    // 对于两字、三字词，使最后一个字也可以成为辅助码
+    else if ((han_cnt == 2 || han_cnt == 3) && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cur_han_words.size() - last_cplen, last_cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(cur_han_words.size() - last_cplen, last_cplen)][0] == code_[code_.size() - 1])
+      last_helpcode_matched_list.push_back(cand);
   }
+  if (last_helpcode_matched_list.size() > 0)
+    cur_candidates_.insert(cur_candidates_.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
   auto tmp_cand_list = dict_.generate(code_);
   cur_candidates_.insert(cur_candidates_.end(), tmp_cand_list.begin(), tmp_cand_list.end());
 }
