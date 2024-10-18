@@ -8,4 +8,10 @@
 
 This is a fcitx5-based input method, meant to improve the input Chinese experience in Linux.
 
+## 感谢
+
+- <https://github.com/fcitx/fcitx5>
+- <https://github.com/fcitx/fcitx5-quwei>
+- <https://github.com/fcitx/fcitx5-chinese-addons>
+
 
