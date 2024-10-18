@@ -88,7 +88,7 @@ private:
   int cand_size_ = CANDIDATE_SIZE;
   static DictionaryUlPb dict_;
   static std::unique_ptr<Log> logger_;
-  static boost::circular_buffer<std::vector<DictionaryUlPb::WordItem>> cached_buffer_;
+  static boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> cached_buffer_;
 
   // generate words
   int generate();
@@ -182,7 +182,7 @@ bool FanimeCandidateList::hasNext() const {
 DictionaryUlPb FanimeCandidateList::dict_ = DictionaryUlPb();
 std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
 
-boost::circular_buffer<std::vector<DictionaryUlPb::WordItem>> FanimeCandidateList::cached_buffer_(8);
+boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeCandidateList::cached_buffer_(8);
 
 int FanimeCandidateList::generate() {
   if (engine_->get_use_fullhelpcode()) {
@@ -190,9 +190,19 @@ int FanimeCandidateList::generate() {
   } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
     // TODO: 对于两字、三字词，使最后一个字也可以成为辅助码
     handle_singlehelpcode();
-    FCITX_INFO() << "这也能辅助？";
   } else {
-    cur_candidates_ = dict_.generate(code_);
+    bool need_query = true;
+    for (auto item : cached_buffer_) {
+      if (item.first == code_) {
+        cur_candidates_ = item.second;
+        need_query = false;
+        break;
+      }
+    }
+    if (need_query) {
+      cur_candidates_ = dict_.generate(code_);
+    }
+    cached_buffer_.push_front(std::make_pair(code_, cur_candidates_));
   }
   cur_page_ = 0;
   long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
@@ -214,8 +224,17 @@ int FanimeCandidateList::generate() {
 }
 
 void FanimeCandidateList::handle_fullhelpcode() {
-  auto tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
-  cached_buffer_.push_back(tmp_cand_list);
+  std::vector<DictionaryUlPb::WordItem> tmp_cand_list;
+  bool need_to_query = true;
+  for (auto item : cached_buffer_)
+    if (item.first == engine_->get_raw_pinyin()) {
+      tmp_cand_list = item.second;
+      need_to_query = false;
+      break;
+    }
+  if (need_to_query)
+    tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
+  cached_buffer_.push_front(std::make_pair(engine_->get_raw_pinyin(), tmp_cand_list));
   if (engine_->get_raw_pinyin().size() == 2) {
     if (code_.size() == 3) {
       for (const auto &cand : tmp_cand_list) {
@@ -273,7 +292,17 @@ bool FanimeCandidateList::is_need_singlehelpcode() {
 }
 
 void FanimeCandidateList::handle_singlehelpcode() {
-  auto tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
+  std::vector<DictionaryUlPb::WordItem> tmp_cand_list_with_helpcode_trimed;
+  bool need_to_query = true;
+  for (auto item : cached_buffer_)
+    if (item.first == code_.substr(0, code_.size() - 1)) {
+      tmp_cand_list_with_helpcode_trimed = item.second;
+      need_to_query = false;
+      FCITX_INFO() << "used cache";
+      break;
+    }
+  if (need_to_query)
+    tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
     std::string cur_han_words = std::get<1>(cand);
     size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
