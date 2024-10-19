@@ -182,7 +182,7 @@ bool FanimeCandidateList::hasNext() const {
 DictionaryUlPb FanimeCandidateList::dict_ = DictionaryUlPb();
 std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
 
-boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeCandidateList::cached_buffer_(8);
+boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeCandidateList::cached_buffer_(10);
 
 int FanimeCandidateList::generate() {
   if (engine_->get_use_fullhelpcode()) {
@@ -208,10 +208,11 @@ int FanimeCandidateList::generate() {
   // 放到实际的候选列表里面去
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      if (PinyinUtil::cnt_han_chars(std::get<1>(cur_candidates_[i])) > 2) {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, std::get<1>(cur_candidates_[i]) + PinyinUtil::compute_helpcodes(std::get<1>(cur_candidates_[i]).substr(0, PinyinUtil::get_first_char_size(std::get<1>(cur_candidates_[i])))));
+      std::string cur_han_words = std::get<1>(cur_candidates_[i]);
+      if (PinyinUtil::cnt_han_chars(cur_han_words) > 2) {
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words.substr(0, PinyinUtil::get_first_char_size(cur_han_words))));
       } else {
-        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, std::get<1>(cur_candidates_[i]) + PinyinUtil::compute_helpcodes(std::get<1>(cur_candidates_[i])));
+        candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words));
       }
     }
   }
