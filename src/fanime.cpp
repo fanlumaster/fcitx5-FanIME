@@ -49,7 +49,7 @@ public:
       text_to_commit.erase(start_pos, text_to_commit.size() - start_pos + 1);
     }
     inputContext->commitString(text_to_commit);
-    // inputContext->commitString("fanyfull");
+    // TODO: 清理缓存
     auto state = inputContext->propertyFor(engine_->factory());
     state->reset();
   }
@@ -203,6 +203,21 @@ int FanimeCandidateList::generate() {
     }
     cached_buffer_.push_front(std::make_pair(code_, cur_candidates_));
   }
+  //
+  std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+  while (true) {
+    size_t pos = seg_pinyin.rfind('\'');
+    if (pos != std::string::npos) {
+      seg_pinyin = seg_pinyin.substr(0, pos);
+      std::string pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
+      for (auto item : cached_buffer_)
+        if (item.first == pure_pinyin) {
+          cur_candidates_.insert(cur_candidates_.end(), item.second.begin(), item.second.end());
+          break;
+        }
+    } else
+      break;
+  }
   cur_page_ = 0;
   long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
   // 放到实际的候选列表里面去
@@ -234,6 +249,7 @@ void FanimeCandidateList::handle_fullhelpcode() {
     }
   if (need_to_query)
     tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
+  // 把辅助码过滤前的结果加入缓存，不能把辅助码带上
   cached_buffer_.push_front(std::make_pair(engine_->get_raw_pinyin(), tmp_cand_list));
   if (engine_->get_raw_pinyin().size() == 2) {
     if (code_.size() == 3) {
