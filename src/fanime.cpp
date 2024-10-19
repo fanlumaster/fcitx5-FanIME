@@ -82,7 +82,6 @@ private:
   fcitx::Text labels_[CANDIDATE_SIZE];
   std::unique_ptr<FanimeCandidateWord> candidates_[CANDIDATE_SIZE];
   std::vector<DictionaryUlPb::WordItem> cur_candidates_;
-  int cur_page_;
   std::string code_;
   int cursor_ = 0;
   int cand_size_ = CANDIDATE_SIZE;
@@ -117,11 +116,12 @@ void FanimeCandidateList::prev() {
   if (!hasPrev()) {
     return;
   }
-  cur_page_ -= 1;
-  long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
+  int cur_page = engine_->get_cand_page_idx() - 1;
+  engine_->set_cand_page_idx(cur_page);
+  long unsigned int vec_size = cur_candidates_.size() - cur_page * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page * CANDIDATE_SIZE]);
       candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words));
     }
   }
@@ -141,11 +141,12 @@ void FanimeCandidateList::next() {
   if (!hasNext()) {
     return;
   }
-  cur_page_ += 1;
-  long unsigned int vec_size = cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size() - cur_page_ * CANDIDATE_SIZE;
+  int cur_page = engine_->get_cand_page_idx() + 1;
+  engine_->set_cand_page_idx(cur_page);
+  long unsigned int vec_size = cur_candidates_.size() - cur_page * CANDIDATE_SIZE > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size() - cur_page * CANDIDATE_SIZE;
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {
     if (i < vec_size) {
-      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page_ * CANDIDATE_SIZE]);
+      std::string cur_han_words = std::get<1>(cur_candidates_[i + cur_page * CANDIDATE_SIZE]);
       candidates_[i] = std::make_unique<FanimeCandidateWord>(engine_, cur_han_words + PinyinUtil::compute_helpcodes(cur_han_words));
     }
   }
@@ -162,7 +163,7 @@ void FanimeCandidateList::next() {
 }
 
 bool FanimeCandidateList::hasPrev() const {
-  if (cur_page_ > 0) {
+  if (engine_->get_cand_page_idx() > 0) {
     return true;
   }
   return false;
@@ -173,7 +174,7 @@ bool FanimeCandidateList::hasNext() const {
   if (static_cast<int>(cur_candidates_.size()) % CANDIDATE_SIZE > 0 && cur_candidates_.size() > CANDIDATE_SIZE) {
     total_page += 1;
   }
-  if (cur_page_ < (total_page - 1)) {
+  if (engine_->get_cand_page_idx() < (total_page - 1)) {
     return true;
   }
   return false;
@@ -203,22 +204,25 @@ int FanimeCandidateList::generate() {
     }
     cached_buffer_.push_front(std::make_pair(code_, cur_candidates_));
   }
-  //
-  std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
-  while (true) {
-    size_t pos = seg_pinyin.rfind('\'');
-    if (pos != std::string::npos) {
-      seg_pinyin = seg_pinyin.substr(0, pos);
-      std::string pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
-      for (auto item : cached_buffer_)
-        if (item.first == pure_pinyin) {
-          cur_candidates_.insert(cur_candidates_.end(), item.second.begin(), item.second.end());
-          break;
-        }
-    } else
-      break;
+
+  // 如果没查到或者已经查到的也不合适，就补上拼音子串的结果用来给接下来的造词使用
+  if (!engine_->get_use_fullhelpcode()) {
+    std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+    while (true) {
+      size_t pos = seg_pinyin.rfind('\'');
+      if (pos != std::string::npos) {
+        seg_pinyin = seg_pinyin.substr(0, pos);
+        std::string pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
+        for (auto item : cached_buffer_)
+          if (item.first == pure_pinyin) {
+            cur_candidates_.insert(cur_candidates_.end(), item.second.begin(), item.second.end());
+            break;
+          }
+      } else
+        break;
+    }
   }
-  cur_page_ = 0;
+  engine_->set_cand_page_idx(0);
   long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
   // 放到实际的候选列表里面去
   for (long unsigned int i = 0; i < CANDIDATE_SIZE; i++) {

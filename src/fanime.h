@@ -23,7 +23,7 @@ public:
   void updateUI();
   // 清除 buffer，更新 UI
   void reset();
-  fcitx::InputBuffer& getBuffer();
+  fcitx::InputBuffer &getBuffer();
 
 private:
   FanimeEngine *engine_;
@@ -54,6 +54,8 @@ public:
   void set_use_fullhelpcode(bool flag) { use_fullhelpcode_ = flag; }
   std::string get_raw_pinyin() { return raw_pinyin; }
   void set_raw_pinyin(std::string pinyin) { raw_pinyin = pinyin; }
+  int get_cand_page_idx() { return cand_page_idx_; }
+  void set_cand_page_idx(int page_idx) { cand_page_idx_ = page_idx; }
 
 private:
   FCITX_ADDON_DEPENDENCY_LOADER(chttrans, instance_->addonManager());
@@ -65,6 +67,7 @@ private:
   // TODO: 后续把这几个辅助码相关的变量抽象成一个简单类
   bool use_fullhelpcode_ = false;
   std::string raw_pinyin;
+  int cand_page_idx_;
 };
 
 class FanimeEngineFactory : public fcitx::AddonFactory {
