@@ -179,3 +179,15 @@ std::string PinyinUtil::extract_preview(std::string candidate) {
   return candidate;
 }
 
+bool PinyinUtil::is_all_complete_pinyin(std::string pure_pinyin, std::string seg_pinyin) {
+  if (pure_pinyin.size() % 2)
+    return false;
+  auto pinyin_size = seg_pinyin.size();
+  size_t index = 0;
+  while (index < pinyin_size) {
+    if (seg_pinyin[index] == '\'' || seg_pinyin[index + 1] == '\'')
+      return false;
+    index += 3;
+  }
+  return true;
+}

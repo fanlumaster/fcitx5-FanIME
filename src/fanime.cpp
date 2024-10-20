@@ -54,7 +54,7 @@ public:
 
     // 如果是前面的拼音子串对应的汉字(词)上屏
     auto committed_han_size = PinyinUtil::cnt_han_chars(text_to_commit);
-    if (committed_han_size < FanimeEngine::supposed_han_cnt) {
+    if (FanimeEngine::can_create_word && committed_han_size < FanimeEngine::supposed_han_cnt) {
       std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
       size_t cur_index = 0;
       while (cur_index < committed_han_size) {
@@ -207,9 +207,10 @@ int FanimeCandidateList::generate() {
   FanimeEngine::pure_pinyin = code_;
   FanimeEngine::seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
   FanimeEngine::supposed_han_cnt = boost::count(FanimeEngine::seg_pinyin, '\'') + 1;
+  FanimeEngine::can_create_word = PinyinUtil::is_all_complete_pinyin(FanimeEngine::pure_pinyin, FanimeEngine::seg_pinyin);
   if (engine_->get_use_fullhelpcode()) {
     handle_fullhelpcode();
-    FanimeEngine::supposed_han_cnt = boost::count(PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin()), '\'') + 1; 
+    FanimeEngine::supposed_han_cnt = boost::count(PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin()), '\'') + 1;
   } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
     handle_singlehelpcode();
     FanimeEngine::supposed_han_cnt -= 1;
@@ -523,7 +524,8 @@ DictionaryUlPb FanimeEngine::fan_dict = DictionaryUlPb();
 boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeEngine::cached_buffer(10);
 std::string FanimeEngine::pure_pinyin("");
 std::string FanimeEngine::seg_pinyin("");
-int FanimeEngine::supposed_han_cnt = 0;
+size_t FanimeEngine::supposed_han_cnt = 0;
+bool FanimeEngine::can_create_word = false;
 
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");

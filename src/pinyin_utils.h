@@ -25,6 +25,7 @@ public:
   static std::string::size_type cnt_han_chars(std::string words);
   static std::string compute_helpcodes(std::string words);
   static std::string extract_preview(std::string candidate);
+  static bool is_all_complete_pinyin(std::string pure_pinyin, std::string seg_pinyin);
 };
 
 #endif // PINYIN_UTILS_H

@@ -42,7 +42,8 @@ public:
   static boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> cached_buffer;
   static std::string pure_pinyin;
   static std::string seg_pinyin;
-  static int supposed_han_cnt;
+  static size_t supposed_han_cnt;
+  static bool can_create_word;
 
   FanimeEngine(fcitx::Instance *instance);
 
