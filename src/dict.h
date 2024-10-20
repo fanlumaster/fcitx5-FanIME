@@ -22,6 +22,8 @@ public:
 e table
   */
   std::vector<WordItem> generate(const std::string code);
+  std::vector<DictionaryUlPb::WordItem> generate_for_creating_word(const std::string code);
+
   /*
     Return: list of complete item data of database table
   */
@@ -65,6 +67,7 @@ private:
       - whether needed to filter
   */
   std::pair<std::string, bool> build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list);
+  std::string build_sql_for_creating_word(const std::string &sp_str);
   std::string choose_tbl(const std::string &sp_str, size_t word_len);
 };
 #endif

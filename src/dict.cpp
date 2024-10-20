@@ -100,6 +100,8 @@ void DictionaryUlPb::filter_key_value_list(std::vector<DictionaryUlPb::WordItem>
   }
 }
 
+std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate_for_creating_word(const std::string code) { return select_complete_data(build_sql_for_creating_word(code)); }
+
 // generate_with_seg_pinyin
 
 DictionaryUlPb::~DictionaryUlPb() {
@@ -200,9 +202,20 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
     for (std::string &cur_pinyin : pinyin_list) {
       sql_param += cur_pinyin.substr(0, 1);
     }
+    // TODO: not adding weight desc
     sql = boost::str(boost::format("select * from %1% where jp = '%2%';") % table % sql_param); // do not use limit, we need retrive all data and then filter
   }
   return std::make_pair(sql, need_filtering);
+}
+
+std::string DictionaryUlPb::build_sql_for_creating_word(const std::string &sp_str) {
+  std::string base_sql = "select * from(select * from %1% where key = '%2%' order by weight desc limit %3%)";
+  std::string res_sql = boost::str(boost::format(base_sql) % choose_tbl(sp_str.substr(0, 2), 1) % sp_str.substr(0, 2) % default_candicate_page_limit);
+  std::string trimed_sp_str = sp_str.substr(0, 8); // 最多只到 4 字词语
+  for (size_t i = 4; i <= sp_str.size(); i += 2) {
+    res_sql = boost::str(boost::format(base_sql) % choose_tbl(sp_str.substr(0, i), i / 2) % sp_str.substr(0, i) % default_candicate_page_limit) + " union all " + res_sql;
+  }
+  return res_sql;
 }
 
 std::string DictionaryUlPb::choose_tbl(const std::string &sp_str, size_t word_len) {
