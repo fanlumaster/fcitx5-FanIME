@@ -17,6 +17,7 @@
 #include <memory>
 #include <chrono>
 #include <boost/locale.hpp>
+#include <boost/range/algorithm/count.hpp>
 #include <boost/circular_buffer.hpp>
 
 namespace {
@@ -49,9 +50,26 @@ public:
       text_to_commit.erase(start_pos, text_to_commit.size() - start_pos + 1);
     }
     inputContext->commitString(text_to_commit);
-    // TODO: 清理缓存
     auto state = inputContext->propertyFor(engine_->factory());
-    state->reset();
+
+    // 如果是前面的拼音子串对应的汉字(词)上屏
+    auto committed_han_size = PinyinUtil::cnt_han_chars(text_to_commit);
+    if (committed_han_size < FanimeEngine::supposed_han_cnt) {
+      std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
+      size_t cur_index = 0;
+      while (cur_index < committed_han_size) {
+        size_t pos = tmp_seg_pinyin.find('\'');
+        tmp_seg_pinyin = tmp_seg_pinyin.substr(pos, tmp_seg_pinyin.size() - pos);
+        cur_index += 1;
+      }
+      std::string pure_pinyin = boost::algorithm::replace_all_copy(tmp_seg_pinyin, "'", "");
+
+      // continue querying
+      state->setCode(pure_pinyin);
+    } else {
+      state->reset();
+    }
+    // TODO: 清理缓存
   }
 
 private:
@@ -186,10 +204,15 @@ std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home
 boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeCandidateList::cached_buffer_(10);
 
 int FanimeCandidateList::generate() {
+  FanimeEngine::pure_pinyin = code_;
+  FanimeEngine::seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+  FanimeEngine::supposed_han_cnt = boost::count(FanimeEngine::seg_pinyin, '\'') + 1;
   if (engine_->get_use_fullhelpcode()) {
     handle_fullhelpcode();
+    FanimeEngine::supposed_han_cnt = boost::count(PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin()), '\'') + 1; 
   } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
     handle_singlehelpcode();
+    FanimeEngine::supposed_han_cnt -= 1;
   } else {
     bool need_query = true;
     for (auto item : cached_buffer_) {
@@ -492,6 +515,15 @@ void FanimeState::reset() {
 }
 
 fcitx::InputBuffer &FanimeState::getBuffer() { return buffer_; }
+
+//
+//~:D FanimeEngine
+//
+DictionaryUlPb FanimeEngine::fan_dict = DictionaryUlPb();
+boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeEngine::cached_buffer(10);
+std::string FanimeEngine::pure_pinyin("");
+std::string FanimeEngine::seg_pinyin("");
+int FanimeEngine::supposed_han_cnt = 0;
 
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");

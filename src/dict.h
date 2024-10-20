@@ -1,3 +1,6 @@
+#ifndef FAN_DICT_H
+#define FAN_DICT_H
+
 #include <vector>
 #include <tuple>
 #include <unordered_map>
@@ -64,3 +67,4 @@ private:
   std::pair<std::string, bool> build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list);
   std::string choose_tbl(const std::string &sp_str, size_t word_len);
 };
+#endif

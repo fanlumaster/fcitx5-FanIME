@@ -178,3 +178,4 @@ std::string PinyinUtil::extract_preview(std::string candidate) {
   }
   return candidate;
 }
+

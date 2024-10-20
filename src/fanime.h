@@ -9,7 +9,9 @@
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/inputpanel.h>
 #include <fcitx/instance.h>
+#include <boost/circular_buffer.hpp>
 #include <iconv.h>
+#include "dict.h"
 #include "log.h"
 
 class FanimeEngine;
@@ -23,6 +25,7 @@ public:
   void updateUI();
   // 清除 buffer，更新 UI
   void reset();
+  fcitx::InputContext &getIc();
   fcitx::InputBuffer &getBuffer();
 
 private:
@@ -35,6 +38,12 @@ private:
 
 class FanimeEngine : public fcitx::InputMethodEngineV2 {
 public:
+  static DictionaryUlPb fan_dict;
+  static boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> cached_buffer;
+  static std::string pure_pinyin;
+  static std::string seg_pinyin;
+  static int supposed_han_cnt;
+
   FanimeEngine(fcitx::Instance *instance);
 
   void activate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) override;
