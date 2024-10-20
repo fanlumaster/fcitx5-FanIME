@@ -62,10 +62,17 @@ public:
         cur_index += 1;
       }
       std::string pure_pinyin = boost::algorithm::replace_all_copy(tmp_seg_pinyin, "'", "");
+      FanimeEngine::word_to_be_created += text_to_commit;
+      FanimeEngine::during_creating = true;
       // continue querying
       state->setCode(pure_pinyin);
     } else {
-      inputContext->commitString(text_to_commit);
+      if (FanimeEngine::word_to_be_created != "") {
+        FanimeEngine::word_to_be_created += text_to_commit;
+        inputContext->commitString(FanimeEngine::word_to_be_created);
+      } else {
+        inputContext->commitString(text_to_commit);
+      }
       state->reset();
     }
     // TODO: 清理缓存
@@ -207,44 +214,50 @@ int FanimeCandidateList::generate() {
   FanimeEngine::seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
   FanimeEngine::supposed_han_cnt = boost::count(FanimeEngine::seg_pinyin, '\'') + 1;
   FanimeEngine::can_create_word = PinyinUtil::is_all_complete_pinyin(FanimeEngine::pure_pinyin, FanimeEngine::seg_pinyin);
-  if (engine_->get_use_fullhelpcode()) {
-    handle_fullhelpcode();
-    FanimeEngine::supposed_han_cnt = boost::count(PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin()), '\'') + 1;
-  } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
-    handle_singlehelpcode();
-    FanimeEngine::supposed_han_cnt -= 1;
+
+  if (FanimeEngine::during_creating) {
+    cur_candidates_ = dict_.generate_for_creating_word(code_);
   } else {
-    bool need_query = true;
-    for (auto item : cached_buffer_) {
-      if (item.first == code_) {
-        cur_candidates_ = item.second;
-        need_query = false;
-        break;
+    if (engine_->get_use_fullhelpcode()) {
+      handle_fullhelpcode();
+      FanimeEngine::supposed_han_cnt = boost::count(PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin()), '\'') + 1;
+    } else if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) { // 默认的单码辅助
+      handle_singlehelpcode();
+      FanimeEngine::supposed_han_cnt -= 1;
+    } else {
+      bool need_query = true;
+      for (auto item : cached_buffer_) {
+        if (item.first == code_) {
+          cur_candidates_ = item.second;
+          need_query = false;
+          break;
+        }
+      }
+      if (need_query) {
+        cur_candidates_ = dict_.generate(code_);
+      }
+      cached_buffer_.push_front(std::make_pair(code_, cur_candidates_));
+    }
+
+    // 如果没查到或者已经查到的也不合适，就补上拼音子串的结果用来给接下来的造词使用
+    if (!engine_->get_use_fullhelpcode()) {
+      std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+      while (true) {
+        size_t pos = seg_pinyin.rfind('\'');
+        if (pos != std::string::npos) {
+          seg_pinyin = seg_pinyin.substr(0, pos);
+          std::string pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
+          for (auto item : cached_buffer_)
+            if (item.first == pure_pinyin) {
+              cur_candidates_.insert(cur_candidates_.end(), item.second.begin(), item.second.end());
+              break;
+            }
+        } else
+          break;
       }
     }
-    if (need_query) {
-      cur_candidates_ = dict_.generate(code_);
-    }
-    cached_buffer_.push_front(std::make_pair(code_, cur_candidates_));
   }
 
-  // 如果没查到或者已经查到的也不合适，就补上拼音子串的结果用来给接下来的造词使用
-  if (!engine_->get_use_fullhelpcode()) {
-    std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
-    while (true) {
-      size_t pos = seg_pinyin.rfind('\'');
-      if (pos != std::string::npos) {
-        seg_pinyin = seg_pinyin.substr(0, pos);
-        std::string pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
-        for (auto item : cached_buffer_)
-          if (item.first == pure_pinyin) {
-            cur_candidates_.insert(cur_candidates_.end(), item.second.begin(), item.second.end());
-            break;
-          }
-      } else
-        break;
-    }
-  }
   engine_->set_cand_page_idx(0);
   long unsigned int vec_size = cur_candidates_.size() > CANDIDATE_SIZE ? CANDIDATE_SIZE : cur_candidates_.size();
   // 放到实际的候选列表里面去
@@ -491,10 +504,10 @@ void FanimeState::updateUI() {
   if (buffer_.size() > 0) {
     inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
     // 嵌在候选框中的 preedit
-    fcitx::Text preedit(PinyinUtil::pinyin_segmentation(buffer_.userInput()));
+    fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()));
     inputPanel.setPreedit(preedit);
     // 嵌在具体的应用中的 preedit
-    fcitx::Text clientPreedit(PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
+    fcitx::Text clientPreedit(FanimeEngine::word_to_be_created + PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
     // TODO: 这里无论如何设置，在 chrome 中不生效，鉴定为 chrome 系列的问题，当然，firefox 也有类似的问题，不尽相同。以后有机会可以去看看能否提个 PR
     // clientPreedit.setCursor(PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()).size());
     clientPreedit.setCursor(0);
@@ -511,6 +524,8 @@ void FanimeState::reset() {
   buffer_.clear();
   engine_->set_use_fullhelpcode(false);
   engine_->set_raw_pinyin("");
+  FanimeEngine::during_creating = false;
+  FanimeEngine::word_to_be_created = "";
   updateUI();
 }
 
@@ -525,6 +540,8 @@ std::string FanimeEngine::pure_pinyin("");
 std::string FanimeEngine::seg_pinyin("");
 size_t FanimeEngine::supposed_han_cnt = 0;
 bool FanimeEngine::can_create_word = false;
+std::string FanimeEngine::word_to_be_created;
+bool FanimeEngine::during_creating = false;
 
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
   conv_ = iconv_open("UTF-8", "GB18030");

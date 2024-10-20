@@ -44,6 +44,8 @@ public:
   static std::string seg_pinyin;
   static size_t supposed_han_cnt;
   static bool can_create_word;
+  static std::string word_to_be_created;
+  static bool during_creating;
 
   FanimeEngine(fcitx::Instance *instance);
 
