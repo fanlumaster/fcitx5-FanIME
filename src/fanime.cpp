@@ -49,11 +49,10 @@ public:
     if (start_pos != std::string::npos) {
       text_to_commit.erase(start_pos, text_to_commit.size() - start_pos + 1);
     }
-    inputContext->commitString(text_to_commit);
     auto state = inputContext->propertyFor(engine_->factory());
 
-    // 如果是前面的拼音子串对应的汉字(词)上屏
     auto committed_han_size = PinyinUtil::cnt_han_chars(text_to_commit);
+    // 如果是前面的拼音子串对应的汉字(词)上屏
     if (FanimeEngine::can_create_word && committed_han_size < FanimeEngine::supposed_han_cnt) {
       std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
       size_t cur_index = 0;
@@ -63,10 +62,10 @@ public:
         cur_index += 1;
       }
       std::string pure_pinyin = boost::algorithm::replace_all_copy(tmp_seg_pinyin, "'", "");
-
       // continue querying
       state->setCode(pure_pinyin);
     } else {
+      inputContext->commitString(text_to_commit);
       state->reset();
     }
     // TODO: 清理缓存
