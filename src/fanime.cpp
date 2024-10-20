@@ -58,7 +58,7 @@ public:
       size_t cur_index = 0;
       while (cur_index < committed_han_size) {
         size_t pos = tmp_seg_pinyin.find('\'');
-        tmp_seg_pinyin = tmp_seg_pinyin.substr(pos, tmp_seg_pinyin.size() - pos);
+        tmp_seg_pinyin = tmp_seg_pinyin.substr(pos + 1, tmp_seg_pinyin.size() - (pos + 1));
         cur_index += 1;
       }
       std::string pure_pinyin = boost::algorithm::replace_all_copy(tmp_seg_pinyin, "'", "");
