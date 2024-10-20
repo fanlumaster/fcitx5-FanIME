@@ -40,11 +40,14 @@ class FanimeEngine : public fcitx::InputMethodEngineV2 {
 public:
   static DictionaryUlPb fan_dict;
   static boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> cached_buffer;
+  static std::vector<DictionaryUlPb::WordItem> current_candidates;
+  static size_t current_page_idx;
   static std::string pure_pinyin;
   static std::string seg_pinyin;
   static size_t supposed_han_cnt;
   static bool can_create_word;
   static std::string word_to_be_created;
+  static std::string word_pinyin;
   static bool during_creating;
 
   FanimeEngine(fcitx::Instance *instance);
