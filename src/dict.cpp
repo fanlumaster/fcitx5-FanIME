@@ -102,6 +102,16 @@ void DictionaryUlPb::filter_key_value_list(std::vector<DictionaryUlPb::WordItem>
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate_for_creating_word(const std::string code) { return select_complete_data(build_sql_for_creating_word(code)); }
 
+int DictionaryUlPb::create_word(std::string pinyin, std::string word) {
+  std::string jp;
+  for (size_t i = 0; i < pinyin.size(); i += 2)
+    jp += pinyin[i];
+  if (!do_validate(pinyin, jp, word))
+    return ERROR;
+  insert_data(build_sql_for_inserting_word(pinyin, jp, word));
+  return OK;
+}
+
 // generate_with_seg_pinyin
 
 DictionaryUlPb::~DictionaryUlPb() {
@@ -162,6 +172,19 @@ std::vector<std::pair<std::string, std::string>> DictionaryUlPb::select_key_and_
   return candidateList;
 }
 
+int DictionaryUlPb::insert_data(std::string sql_str) {
+  sqlite3_stmt *stmt;
+  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
+  if (exit != SQLITE_OK) {
+    // logger->error("sqlite3_prepare_v2 error.");
+  }
+  exit = sqlite3_step(stmt);
+  if (exit != SQLITE_DONE) {
+    // log
+  }
+  return 0;
+}
+
 std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list) {
   bool all_entire_pinyin = true;
   bool all_jp = true;
@@ -218,9 +241,21 @@ std::string DictionaryUlPb::build_sql_for_creating_word(const std::string &sp_st
   return res_sql;
 }
 
+std::string DictionaryUlPb::build_sql_for_inserting_word(std::string key, std::string jp, std::string value) {
+  std::string table = choose_tbl(key, jp.size());
+  std::string base_sql = "insert into %1% (key, jp, value, weight) values ('%2%', '%3%', '%4%', '%5%');";
+  return boost::str(boost::format(base_sql) % table % key % jp % value % 1);
+}
+
 std::string DictionaryUlPb::choose_tbl(const std::string &sp_str, size_t word_len) {
   std::string base_tbl("tbl_%1%_%2%");
   if (word_len >= 8)
     return boost::str(boost::format(base_tbl) % "others" % sp_str[0]);
   return boost::str(boost::format(base_tbl) % word_len % sp_str[0]);
+}
+
+bool DictionaryUlPb::do_validate(std::string key, std::string jp, std::string value) {
+  if (key.size() % 2 || jp.size() != key.size() / 2 || key.size() != PinyinUtil::cnt_han_chars(value) * 2)
+    return false;
+  return true;
 }

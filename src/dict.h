@@ -17,12 +17,16 @@ class DictionaryUlPb {
 public:
   using WordItem = std::tuple<std::string, std::string, int>;
 
+  static const int OK = 0;
+  static const int ERROR = -1;
+
   /*
     Return: list of complete item data of database table
 e table
   */
   std::vector<WordItem> generate(const std::string code);
   std::vector<DictionaryUlPb::WordItem> generate_for_creating_word(const std::string code);
+  int create_word(std::string pinyin, std::string word);
 
   /*
     Return: list of complete item data of database table
@@ -62,12 +66,18 @@ private:
   */
   std::vector<std::pair<std::string, std::string>> select_key_and_value(std::string sql_str);
   /*
+    Return: list of complete item data in database table
+  */
+  int insert_data(std::string sql_str);
+  /*
     Return:
       - generated sql
       - whether needed to filter
   */
   std::pair<std::string, bool> build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list);
   std::string build_sql_for_creating_word(const std::string &sp_str);
+  std::string build_sql_for_inserting_word(std::string key, std::string jp, std::string value);
   std::string choose_tbl(const std::string &sp_str, size_t word_len);
+  bool do_validate(std::string key, std::string jp, std::string value);
 };
 #endif

@@ -72,15 +72,14 @@ public:
         std::string pure_pinyin = boost::algorithm::replace_all_copy(FanimeEngine::seg_pinyin, "'", "");
         FanimeEngine::word_pinyin += pure_pinyin;
         FanimeEngine::word_to_be_created += text_to_commit;
-        // TODO: insert to database
-        FCITX_INFO() << "word and pinyin: " << FanimeEngine::word_pinyin << " " << FanimeEngine::word_to_be_created;
+        // insert to database
+        FanimeEngine::fan_dict.create_word(FanimeEngine::word_pinyin, FanimeEngine::word_to_be_created);
         inputContext->commitString(FanimeEngine::word_to_be_created);
       } else {
         inputContext->commitString(text_to_commit);
       }
       state->reset();
     }
-    // TODO: 清理缓存
   }
 
 private:
@@ -113,7 +112,6 @@ private:
   std::string code_;
   int cursor_ = 0;
   int cand_size_ = CANDIDATE_SIZE;
-  static DictionaryUlPb dict_;
   static std::unique_ptr<Log> logger_;
   static boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> cached_buffer_;
 
@@ -208,7 +206,6 @@ bool FanimeCandidateList::hasNext() const {
   return false;
 }
 
-DictionaryUlPb FanimeCandidateList::dict_ = DictionaryUlPb();
 std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
 
 boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeCandidateList::cached_buffer_(10);
@@ -220,7 +217,7 @@ int FanimeCandidateList::generate() {
   FanimeEngine::can_create_word = PinyinUtil::is_all_complete_pinyin(FanimeEngine::pure_pinyin, FanimeEngine::seg_pinyin);
 
   if (FanimeEngine::during_creating) {
-    FanimeEngine::current_candidates = dict_.generate_for_creating_word(code_);
+    FanimeEngine::current_candidates = FanimeEngine::fan_dict.generate_for_creating_word(code_);
   } else {
     if (engine_->get_use_fullhelpcode()) {
       handle_fullhelpcode();
@@ -238,9 +235,10 @@ int FanimeCandidateList::generate() {
         }
       }
       if (need_query) {
-        FanimeEngine::current_candidates = dict_.generate(code_);
+        FanimeEngine::current_candidates = FanimeEngine::fan_dict.generate(code_);
       }
-      cached_buffer_.push_front(std::make_pair(code_, FanimeEngine::current_candidates));
+      if (FanimeEngine::current_candidates.size() > 0)
+        cached_buffer_.push_front(std::make_pair(code_, FanimeEngine::current_candidates));
     }
 
     // 如果没查到或者已经查到的也不合适，就补上拼音子串的结果用来给接下来的造词使用
@@ -292,7 +290,7 @@ void FanimeCandidateList::handle_fullhelpcode() {
       break;
     }
   if (need_to_query)
-    tmp_cand_list = dict_.generate(engine_->get_raw_pinyin());
+    tmp_cand_list = FanimeEngine::fan_dict.generate(engine_->get_raw_pinyin());
   // 把辅助码过滤前的结果加入缓存，不能把辅助码带上
   cached_buffer_.push_front(std::make_pair(engine_->get_raw_pinyin(), tmp_cand_list));
   if (engine_->get_raw_pinyin().size() == 2) {
@@ -361,7 +359,7 @@ void FanimeCandidateList::handle_singlehelpcode() {
       break;
     }
   if (need_to_query)
-    tmp_cand_list_with_helpcode_trimed = dict_.generate(code_.substr(0, code_.size() - 1));
+    tmp_cand_list_with_helpcode_trimed = FanimeEngine::fan_dict.generate(code_.substr(0, code_.size() - 1));
   std::vector<DictionaryUlPb::WordItem> last_helpcode_matched_list;
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
     std::string cur_han_words = std::get<1>(cand);
@@ -376,7 +374,7 @@ void FanimeCandidateList::handle_singlehelpcode() {
   }
   if (last_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
-  auto tmp_cand_list = dict_.generate(code_);
+  auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
   FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), tmp_cand_list.begin(), tmp_cand_list.end());
 }
 
@@ -529,6 +527,7 @@ void FanimeState::reset() {
   buffer_.clear();
   engine_->set_use_fullhelpcode(false);
   engine_->set_raw_pinyin("");
+  FanimeEngine::cached_buffer.clear(); // 清理缓存
   FanimeEngine::current_candidates.clear();
   FanimeEngine::during_creating = false;
   FanimeEngine::word_to_be_created = "";
