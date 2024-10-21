@@ -53,6 +53,9 @@ DictionaryUlPb::DictionaryUlPb() {
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {
   std::vector<DictionaryUlPb::WordItem> candidate_list;
+  if (code.size() == 0) {
+    return candidate_list;
+  }
   std::vector<std::string> code_list;
   if (code.size() == 1) {
     generate_for_single_char(candidate_list, code);

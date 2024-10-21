@@ -244,6 +244,8 @@ int FanimeCandidateList::generate() {
     // 如果没查到或者已经查到的也不合适，就补上拼音子串的结果用来给接下来的造词使用
     if (!engine_->get_use_fullhelpcode()) {
       std::string seg_pinyin = PinyinUtil::pinyin_segmentation(code_);
+      if (code_.size() > 1 && code_.size() % 2 && is_need_singlehelpcode()) // 默认单码辅助的情况
+        seg_pinyin = seg_pinyin.substr(0, seg_pinyin.rfind('\''));
       while (true) {
         size_t pos = seg_pinyin.rfind('\'');
         if (pos != std::string::npos) {
