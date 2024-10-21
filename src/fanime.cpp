@@ -316,11 +316,15 @@ void FanimeCandidateList::handle_fullhelpcode() {
         }
       }
     }
-  } else { // engine_->get_raw_pinyin().size() == 4
-    generate_from_cache();
-    tmp_cand_list = FanimeEngine::current_candidates;
-    FanimeEngine::current_candidates.clear();
-    if (code_.size() == 5) {
+  } else { // engine_->get_raw_pinyin().size() >= 4
+    // 把双字和单字提取出来(如果有的话)
+    if (code_.size() % 2) {
+      auto tmp_code_ = code_;
+      code_ = code_.substr(0, 5);
+      generate_from_cache();
+      code_ = tmp_code_;
+      tmp_cand_list = FanimeEngine::current_candidates;
+      FanimeEngine::current_candidates.clear();
       for (const auto &cand : tmp_cand_list) {
         std::string cur_han_words = std::get<1>(cand);
         size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
@@ -328,7 +332,13 @@ void FanimeCandidateList::handle_fullhelpcode() {
           FanimeEngine::current_candidates.push_back(cand);
         }
       }
-    } else if (code_.size() == 6) {
+    } else if (code_.size() >= 6) {
+      auto tmp_code_ = code_;
+      code_ = code_.substr(0, 6);
+      generate_from_cache();
+      code_ = tmp_code_;
+      tmp_cand_list = FanimeEngine::current_candidates;
+      FanimeEngine::current_candidates.clear();
       for (const auto &cand : tmp_cand_list) {
         std::string cur_han_words = std::get<1>(cand);
         size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
@@ -537,7 +547,10 @@ void FanimeState::updateUI() {
   if (buffer_.size() > 0) {
     inputPanel.setCandidateList(std::make_unique<FanimeCandidateList>(engine_, ic_, buffer_.userInput()));
     // 嵌在候选框中的 preedit
-    fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()));
+    std::string aux("");
+    if (engine_->get_use_fullhelpcode())
+      aux = "🪓"; // 作个标记
+    fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
     inputPanel.setPreedit(preedit);
     // 嵌在具体的应用中的 preedit
     fcitx::Text clientPreedit(FanimeEngine::word_to_be_created + PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
@@ -571,7 +584,7 @@ fcitx::InputBuffer &FanimeState::getBuffer() { return buffer_; }
 //~:D FanimeEngine
 //
 DictionaryUlPb FanimeEngine::fan_dict = DictionaryUlPb();
-boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeEngine::cached_buffer(10);
+boost::circular_buffer<std::pair<std::string, std::vector<DictionaryUlPb::WordItem>>> FanimeEngine::cached_buffer(20);
 std::vector<DictionaryUlPb::WordItem> FanimeEngine::current_candidates;
 size_t FanimeEngine::current_page_idx;
 std::string FanimeEngine::pure_pinyin("");
