@@ -58,6 +58,7 @@ public:
       size_t cur_index = 0;
       while (cur_index < committed_han_size) {
         size_t pos = tmp_seg_pinyin.find('\'');
+        FanimeEngine::word_pinyin += tmp_seg_pinyin.substr(0, 2);
         tmp_seg_pinyin = tmp_seg_pinyin.substr(pos + 1, tmp_seg_pinyin.size() - (pos + 1));
         cur_index += 1;
       }
@@ -68,7 +69,11 @@ public:
       state->setCode(pure_pinyin);
     } else {
       if (FanimeEngine::word_to_be_created != "") {
+        std::string pure_pinyin = boost::algorithm::replace_all_copy(FanimeEngine::seg_pinyin, "'", "");
+        FanimeEngine::word_pinyin += pure_pinyin;
         FanimeEngine::word_to_be_created += text_to_commit;
+        // TODO: insert to database
+        FCITX_INFO() << "word and pinyin: " << FanimeEngine::word_pinyin << " " << FanimeEngine::word_to_be_created;
         inputContext->commitString(FanimeEngine::word_to_be_created);
       } else {
         inputContext->commitString(text_to_commit);
