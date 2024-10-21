@@ -58,6 +58,10 @@ public:
       if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'')
         FanimeEngine::seg_pinyin = FanimeEngine::seg_pinyin.substr(0, FanimeEngine::seg_pinyin.size() - 2);
       // 使用完整辅助码的情况下时的去尾
+      if (engine_->get_use_fullhelpcode()) {
+        FanimeEngine::seg_pinyin = PinyinUtil::pinyin_segmentation(engine_->get_raw_pinyin());
+        engine_->set_use_fullhelpcode(false);
+      }
       std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
       size_t cur_index = 0;
       while (cur_index < committed_han_size) {
@@ -455,6 +459,12 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
           if (buffer_.userInput().size() % 2 != 1) {
             engine_->set_use_fullhelpcode(true);
             engine_->set_raw_pinyin(buffer_.userInput());
+            auto &inputPanel = ic_->inputPanel();
+            // 嵌在候选框中的 preedit
+            std::string aux = "🪓"; // 作个标记(辅助码的“斧”)
+            fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
+            inputPanel.setPreedit(preedit);
+            ic_->updatePreedit();
           }
         }
         pageable->next();
@@ -549,7 +559,7 @@ void FanimeState::updateUI() {
     // 嵌在候选框中的 preedit
     std::string aux("");
     if (engine_->get_use_fullhelpcode())
-      aux = "🪓"; // 作个标记
+      aux = "🪓"; // 作个标记(辅助码的“斧”)
     fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
     inputPanel.setPreedit(preedit);
     // 嵌在具体的应用中的 preedit
