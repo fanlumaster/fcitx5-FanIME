@@ -57,6 +57,7 @@ public:
       // 无论是否是辅助码辅出来的结果，都要去尾
       if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'')
         FanimeEngine::seg_pinyin = FanimeEngine::seg_pinyin.substr(0, FanimeEngine::seg_pinyin.size() - 2);
+      // 使用完整辅助码的情况下时的去尾
       std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
       size_t cur_index = 0;
       while (cur_index < committed_han_size) {
@@ -316,6 +317,9 @@ void FanimeCandidateList::handle_fullhelpcode() {
       }
     }
   } else { // engine_->get_raw_pinyin().size() == 4
+    generate_from_cache();
+    tmp_cand_list = FanimeEngine::current_candidates;
+    FanimeEngine::current_candidates.clear();
     if (code_.size() == 5) {
       for (const auto &cand : tmp_cand_list) {
         std::string cur_han_words = std::get<1>(cand);
@@ -328,14 +332,21 @@ void FanimeCandidateList::handle_fullhelpcode() {
       for (const auto &cand : tmp_cand_list) {
         std::string cur_han_words = std::get<1>(cand);
         size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
-        // clang-format off
-        if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen))
-          && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 2]
-          && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cplen, cur_han_words.size() - cplen))
-          && PinyinUtil::helpcode_keymap[cur_han_words.substr(cplen, cur_han_words.size() - cplen)][0] == code_[code_.size() - 1]) {
-          FanimeEngine::current_candidates.push_back(cand);
+        size_t han_cnt = PinyinUtil::cnt_han_chars(cur_han_words);
+        if (han_cnt == 2) {
+          // clang-format off
+          if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen))
+            && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 2]
+            && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cplen, cur_han_words.size() - cplen))
+            && PinyinUtil::helpcode_keymap[cur_han_words.substr(cplen, cur_han_words.size() - cplen)][0] == code_[code_.size() - 1]) {
+            FanimeEngine::current_candidates.push_back(cand);
+          }
+          // clang-format on
+        } else if (han_cnt == 1) {
+          if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)] == code_.substr(code_.size() - 2, 2)) {
+            FanimeEngine::current_candidates.push_back(cand);
+          }
         }
-        // clang-format on
       }
     }
   }
@@ -357,36 +368,39 @@ bool FanimeCandidateList::will_trigger_singlehelpcode_mode() {
 }
 
 void FanimeCandidateList::handle_singlehelpcode() {
-  // bool need_to_query = true;
-  // for (auto item : FanimeEngine::cached_buffer)
-  //   if (item.first == code_.substr(0, code_.size() - 1)) {
-  //     tmp_cand_list_with_helpcode_trimed = item.second;
-  //     need_to_query = false;
-  //     break;
-  //   }
-  // if (need_to_query)
-  //   tmp_cand_list_with_helpcode_trimed = FanimeEngine::fan_dict.generate(code_.substr(0, code_.size() - 1));
   generate_from_cache();
   std::vector<DictionaryUlPb::WordItem> tmp_cand_list_with_helpcode_trimed = FanimeEngine::current_candidates;
   FanimeEngine::current_candidates.clear();
+  size_t most_matched_han_cnt = (code_.size() - 1) / 2;
+  std::vector<DictionaryUlPb::WordItem> first_helpcode_matched_list;
   std::vector<DictionaryUlPb::WordItem> last_helpcode_matched_list;
+  std::vector<DictionaryUlPb::WordItem> other_first_helpcode_matched_list;
   std::vector<DictionaryUlPb::WordItem> not_matched_list;
   // 先根据辅助码进行筛选
   for (const auto &cand : tmp_cand_list_with_helpcode_trimed) {
     std::string cur_han_words = std::get<1>(cand);
     size_t han_cnt = PinyinUtil::cnt_han_chars(cur_han_words);
-    size_t cplen = PinyinUtil::get_first_char_size(cur_han_words);
-    size_t last_cplen = PinyinUtil::get_last_char_size(cur_han_words);
-    if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, cplen)][0] == code_[code_.size() - 1])
-      FanimeEngine::current_candidates.push_back(cand);
-    // 对于两字、三字词，使最后一个字也可以成为辅助码
-    else if ((han_cnt == 2 || han_cnt == 3) && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cur_han_words.size() - last_cplen, last_cplen)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(cur_han_words.size() - last_cplen, last_cplen)][0] == code_[code_.size() - 1])
-      last_helpcode_matched_list.push_back(cand);
-    else
-      not_matched_list.push_back(cand);
+    size_t first_han_char_size = PinyinUtil::get_first_char_size(cur_han_words);
+    size_t last_han_char_size = PinyinUtil::get_last_char_size(cur_han_words);
+    if (han_cnt == most_matched_han_cnt) {
+      if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, first_han_char_size)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, first_han_char_size)][0] == code_[code_.size() - 1])
+        first_helpcode_matched_list.push_back(cand);
+      // 对于两字、三字词，使最后一个字也可以成为辅助码
+      else if ((han_cnt == 2 || han_cnt == 3) && PinyinUtil::helpcode_keymap.count(cur_han_words.substr(cur_han_words.size() - last_han_char_size, last_han_char_size)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(cur_han_words.size() - last_han_char_size, last_han_char_size)][0] == code_[code_.size() - 1])
+        last_helpcode_matched_list.push_back(cand);
+    } else {
+      if (PinyinUtil::helpcode_keymap.count(cur_han_words.substr(0, first_han_char_size)) && PinyinUtil::helpcode_keymap[cur_han_words.substr(0, first_han_char_size)][0] == code_[code_.size() - 1])
+        other_first_helpcode_matched_list.push_back(cand);
+      else
+        not_matched_list.push_back(cand);
+    }
   }
+  if (first_helpcode_matched_list.size() > 0)
+    FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), first_helpcode_matched_list.begin(), first_helpcode_matched_list.end());
   if (last_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
+  if (other_first_helpcode_matched_list.size() > 0)
+    FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
   // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
   FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), tmp_cand_list.begin(), tmp_cand_list.end());
@@ -427,9 +441,8 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultNextPage()) || event.key().check(FcitxKey_equal) || event.key().check(FcitxKey_Tab)) {
       if (auto *pageable = candidateList->toPageable(); pageable && pageable->hasNext()) {
         if (event.key().check(FcitxKey_Tab)) {
-          // FCITX_INFO() << "buffer_ " << buffer_.userInput() << " " << PinyinUtil::pinyin_segmentation(buffer_.userInput());
-          // 只有单字和双字可以用完整的辅助码
-          if ((buffer_.userInput().size() == 2 && PinyinUtil::pinyin_segmentation(buffer_.userInput()).size() == 2) || (buffer_.userInput().size() == 4 && PinyinUtil::pinyin_segmentation(buffer_.userInput()).size() == 5)) {
+          // 在非造字模式的情况下，只有单字和双字可以用完整的辅助码
+          if (buffer_.userInput().size() % 2 != 1) {
             engine_->set_use_fullhelpcode(true);
             engine_->set_raw_pinyin(buffer_.userInput());
           }
