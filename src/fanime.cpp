@@ -344,7 +344,7 @@ void FanimeCandidateList::handle_fullhelpcode() {
     // 把双字和单字提取出来(如果有的话)
     if (code_.size() % 2) {
       auto tmp_code_ = code_;
-      code_ = code_.substr(0, 4);
+      code_ = code_.substr(0, 5);
       generate_from_cache();
       code_ = tmp_code_;
       tmp_cand_list = FanimeEngine::current_candidates;
