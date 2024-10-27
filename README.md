@@ -8,6 +8,11 @@
 
 This is a fcitx5-based input method, meant to improve the input Chinese experience in Linux.
 
+Demo video: 
+
+- <https://www.bilibili.com/video/BV12ty1Y4Esu> 
+- <https://www.bilibili.com/video/BV1kvy1YQECp>
+
 ### 一些使用上的说明
 
 1、目前只为完整的双拼提供组词功能，比如，
