@@ -598,11 +598,14 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       if (!c) {
         return;
       }
+      FCITX_INFO() << event.key() << " isRelease=" << event.isRelease() << "fany what?";
       std::string punc, puncAfter;
       // skip key pad
       if (c && !event.key().isKeyPad()) {
         std::tie(punc, puncAfter) = engine_->punctuation()->call<fcitx::IPunctuation::pushPunctuationV2>("zh_CN", ic_, c);
       }
+      //  TODO: 重新设计 quickphrase
+      /*
       if (event.key().check(FcitxKey_semicolon) && engine_->quickphrase()) {
         auto keyString = fcitx::utf8::UCS4ToUTF8(c);
         // s is punc or key
@@ -617,9 +620,11 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
         event.filterAndAccept();
         return;
       }
+      */
       if (!punc.empty()) {
         event.filterAndAccept();
-        ic_->commitString(punc + puncAfter);
+        // ic_->commitString(punc + puncAfter);
+        FCITX_INFO() << punc << " and " << puncAfter << " commit string";
         if (size_t length = fcitx::utf8::lengthValidated(puncAfter); length != 0 && length != fcitx::utf8::INVALID_LENGTH) {
           for (size_t i = 0; i < length; i++) {
             ic_->forwardKey(fcitx::Key(FcitxKey_Left));
