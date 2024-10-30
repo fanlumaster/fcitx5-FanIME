@@ -623,7 +623,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       */
       if (!punc.empty()) {
         event.filterAndAccept();
-        // ic_->commitString(punc + puncAfter);
+        ic_->commitString(punc + puncAfter);
         FCITX_INFO() << punc << " and " << puncAfter << " commit string";
         if (size_t length = fcitx::utf8::lengthValidated(puncAfter); length != 0 && length != fcitx::utf8::INVALID_LENGTH) {
           for (size_t i = 0; i < length; i++) {
