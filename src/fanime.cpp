@@ -598,7 +598,6 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       if (!c) {
         return;
       }
-      FCITX_INFO() << event.key() << " isRelease=" << event.isRelease() << "fany what?";
       std::string punc, puncAfter;
       // skip key pad
       if (c && !event.key().isKeyPad()) {
@@ -623,8 +622,14 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       */
       if (!punc.empty()) {
         event.filterAndAccept();
-        ic_->commitString(punc + puncAfter);
-        FCITX_INFO() << punc << " and " << puncAfter << " commit string";
+        if (event.key().check(FcitxKey_grave)) {
+          event.filterAndAccept();
+          ic_->commitString("·");
+        } else if (event.key().check(FcitxKey_asciitilde)) {
+          ic_->commitString("~");
+        } else {
+          ic_->commitString(punc + puncAfter);
+        }
         if (size_t length = fcitx::utf8::lengthValidated(puncAfter); length != 0 && length != fcitx::utf8::INVALID_LENGTH) {
           for (size_t i = 0; i < length; i++) {
             ic_->forwardKey(fcitx::Key(FcitxKey_Left));
