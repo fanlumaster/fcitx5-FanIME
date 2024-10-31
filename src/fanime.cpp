@@ -552,9 +552,16 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     if (idx == selectionKeys.size() - 1) {
       idx = 0;
     }
+    if (event.key().check(FcitxKey_comma) || event.key().check(FcitxKey_period)) {
+      idx = 0;
+    }
     if (idx >= 0 && idx < candidateList->size() + 1) {
       event.accept();
       candidateList->candidate(idx).select(ic_);
+      if (event.key().check(FcitxKey_comma))
+        ic_->commitString("，");
+      if (event.key().check(FcitxKey_period))
+        ic_->commitString("。");
       return;
     }
     // 翻页键的情况，全局默认的是上箭头和下箭头
