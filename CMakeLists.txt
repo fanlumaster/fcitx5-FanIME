@@ -4,6 +4,10 @@ project(fcitx5-fanime VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if (FAN_DEBUG)
+  add_definitions(-DFAN_DEBUG)
+endif()
+
 find_package(Gettext REQUIRED)
 find_package(Fcitx5Core REQUIRED)
 find_package(Fcitx5Module REQUIRED COMPONENTS Punctuation QuickPhrase)
