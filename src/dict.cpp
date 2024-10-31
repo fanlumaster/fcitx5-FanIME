@@ -67,6 +67,7 @@ std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string
     // build sql for query
     auto sql_pair = build_sql(code, pinyin_list);
     std::string sql_str = sql_pair.first;
+    logger->info(sql_str);
     if (sql_pair.second) { // need to filter
       auto key_value_weight_list = select_complete_data(sql_str);
       filter_key_value_list(candidate_list, pinyin_list, key_value_weight_list);
@@ -221,7 +222,7 @@ std::pair<std::string, bool> DictionaryUlPb::build_sql(const std::string &sp_str
         sql_param1 += pinyin_list[i];
       }
     }
-    sql = boost::str(boost::format("select * from %1% where key >= '%2%' and key <= '%3%' order by length(key) asc, weight desc limit %4%;") % table % sql_param0 % sql_param1 % default_candicate_page_limit);
+    sql = boost::str(boost::format("select * from %1% where key >= '%2%' and key <= '%3%' order by weight desc limit %4%;") % table % sql_param0 % sql_param1 % default_candicate_page_limit);
   } else { // 既不是纯粹的完整的拼音，也不是纯粹的简拼，并且简拼的数量严格大于 1
     need_filtering = true;
     std::string sql_param("");

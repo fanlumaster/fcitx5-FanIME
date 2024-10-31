@@ -465,7 +465,15 @@ bool FanimeCandidateList::will_trigger_singlehelpcode_mode() {
 }
 
 void FanimeCandidateList::handle_singlehelpcode() {
+#ifdef FAN_DEBUG
+  auto start = std::chrono::high_resolution_clock::now();
+#endif
   generate_from_cache();
+#ifdef FAN_DEBUG
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> duration_ms = end - start;
+  FCITX_INFO() << "fany cache time: " << duration_ms.count();
+#endif
   std::vector<DictionaryUlPb::WordItem> tmp_cand_list_with_helpcode_trimed = FanimeEngine::current_candidates;
   FanimeEngine::current_candidates.clear();
   size_t most_matched_han_cnt = (code_.size() - 1) / 2;
@@ -499,7 +507,15 @@ void FanimeCandidateList::handle_singlehelpcode() {
   if (other_first_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
   // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
+#ifdef FAN_DEBUG
+  start = std::chrono::high_resolution_clock::now();
+#endif
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
+#ifdef FAN_DEBUG
+  end = std::chrono::high_resolution_clock::now();
+  duration_ms = end - start;
+  FCITX_INFO() << "fany dict generate time: " << duration_ms.count() << " " << code_;
+#endif
   FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), tmp_cand_list.begin(), tmp_cand_list.end());
   // 把第一步中筛掉的那些数据排在最后
   if (not_matched_list.size() > 0)
