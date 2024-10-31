@@ -15,10 +15,13 @@
 #include <utility>
 #include <vector>
 #include <memory>
-#include <chrono>
 #include <boost/locale.hpp>
 #include <boost/range/algorithm/count.hpp>
 #include <boost/circular_buffer.hpp>
+
+#ifdef FAN_DEBUG
+#include <chrono>
+#endif
 
 namespace {
 
