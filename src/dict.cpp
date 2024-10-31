@@ -67,7 +67,6 @@ std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string
     // build sql for query
     auto sql_pair = build_sql(code, pinyin_list);
     std::string sql_str = sql_pair.first;
-    logger->info(sql_str);
     if (sql_pair.second) { // need to filter
       auto key_value_weight_list = select_complete_data(sql_str);
       filter_key_value_list(candidate_list, pinyin_list, key_value_weight_list);

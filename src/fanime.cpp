@@ -149,15 +149,17 @@ FanimeCandidateList::FanimeCandidateList(FanimeEngine *engine, fcitx::InputConte
   boost::algorithm::to_lower(code_);
   setPageable(this);
   setCursorMovable(this);
-#ifdef FAN_DEBUG
+  // #ifdef FAN_DEBUG
   auto start = std::chrono::high_resolution_clock::now();
-#endif
+  // #endif
   cand_size_ = generate(); // generate actually
-#ifdef FAN_DEBUG
+                           // #ifdef FAN_DEBUG
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> duration_ms = end - start;
   FCITX_INFO() << "fany generate time: " << duration_ms.count();
-#endif
+  if (duration_ms.count() > 5)
+    logger_->info("time warning: " + std::to_string(duration_ms.count()));
+  // #endif
   for (int i = 0; i < cand_size_; i++) { // generate indices of candidate window
     const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
     labels_[i].append(label);
