@@ -158,7 +158,7 @@ FanimeCandidateList::FanimeCandidateList(FanimeEngine *engine, fcitx::InputConte
   std::chrono::duration<double, std::milli> duration_ms = end - start;
   FCITX_INFO() << "fany generate time: " << duration_ms.count();
   if (duration_ms.count() > 5)
-    logger_->info("time warning: " + std::to_string(duration_ms.count()));
+    logger_->info("time warning: " + std::to_string(duration_ms.count()) + " " + code);
   // #endif
   for (int i = 0; i < cand_size_; i++) { // generate indices of candidate window
     const char label[2] = {static_cast<char>('0' + (i + 1)), '\0'};
@@ -510,13 +510,13 @@ void FanimeCandidateList::handle_singlehelpcode() {
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
   // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
 #ifdef FAN_DEBUG
-  start = std::chrono::high_resolution_clock::now();
+  // start = std::chrono::high_resolution_clock::now();
 #endif
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
 #ifdef FAN_DEBUG
-  end = std::chrono::high_resolution_clock::now();
-  duration_ms = end - start;
-  FCITX_INFO() << "fany dict generate time: " << duration_ms.count() << " " << code_;
+  // end = std::chrono::high_resolution_clock::now();
+  // duration_ms = end - start;
+  // FCITX_INFO() << "fany dict generate time: " << duration_ms.count() << " " << code_;
 #endif
   FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), tmp_cand_list.begin(), tmp_cand_list.end());
   // 把第一步中筛掉的那些数据排在最后
