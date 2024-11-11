@@ -679,6 +679,9 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       } else {
         buffer_.backspace();
       }
+      if (!buffer_.size())
+        // 清理状态
+        reset();
       updateUI();
       return event.filterAndAccept();
     }
