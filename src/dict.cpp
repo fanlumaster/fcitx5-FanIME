@@ -57,6 +57,10 @@ DictionaryUlPb::DictionaryUlPb() {
   if (exit != SQLITE_OK) {
     // logger->error("Failed to open db.");
   }
+
+  logger->info("usename: " + PinyinUtil::home_path);
+  logger->info("db path: " + db_path);
+  logger->info("log path: " + log_path);
 }
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {
