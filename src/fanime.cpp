@@ -235,7 +235,7 @@ bool FanimeCandidateList::hasNext() const {
   return false;
 }
 
-std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
+std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
 
 int FanimeCandidateList::generate() {
   FanimeEngine::pure_pinyin = code_;
@@ -567,7 +567,7 @@ void FanimeCandidateList::handle_singlehelpcode_during_creating() {
 
 } // namespace
 
-std::unique_ptr<::Log> FanimeState::logger = std::make_unique<Log>("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
+std::unique_ptr<::Log> FanimeState::logger = std::make_unique<Log>(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
 void FanimeState::keyEvent(fcitx::KeyEvent &event) {
   // 如果候选列表不为空，那么，在键入数字键之后，就可以将候选项选中并且上屏了
   if (auto candidateList = ic_->inputPanel().candidateList()) {

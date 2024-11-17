@@ -45,8 +45,8 @@ DictionaryUlPb::DictionaryUlPb() {
     username = getenv("LOGNAME");
   }
   std::string usernameStr(username);
-  db_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
-  log_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/app.log";
+  db_path = PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
+  log_path = PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log";
   logger = std::make_unique<Log>(log_path);
   const char *homeDir = getenv("HOME");
   if (!homeDir) {

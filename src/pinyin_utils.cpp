@@ -4,12 +4,9 @@
 #include <cstdlib>
 
 std::string PinyinUtil::get_home_path() {
-  const char *username = getenv("USER");
-  if (username == nullptr) {
-    username = getenv("LOGNAME");
-  }
-  std::string usernameStr(username);
-  return usernameStr;
+  const char *homeDir = getenv("HOME");
+  std::string homeDirStr(homeDir);
+  return homeDir;
 }
 
 std::string PinyinUtil::home_path = PinyinUtil::get_home_path();
@@ -24,7 +21,7 @@ std::unordered_map<std::string, std::string> PinyinUtil::ym_keymaps_reversed{{"q
 
 std::unordered_set<std::string> &initialize_quanpin_set() {
   static std::unordered_set<std::string> tmp_set;
-  std::ifstream pinyin_path("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/pinyin.txt");
+  std::ifstream pinyin_path(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/pinyin.txt");
   std::string line;
   while (std::getline(pinyin_path, line)) {
     line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }), line.end());
@@ -36,7 +33,7 @@ std::unordered_set<std::string> &PinyinUtil::quanpin_set = initialize_quanpin_se
 
 std::unordered_map<std::string, std::string> &initialize_helpcode_keymap() {
   static std::unordered_map<std::string, std::string> tmp_map;
-  std::ifstream helpcode_path("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/helpcode.txt");
+  std::ifstream helpcode_path(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/helpcode.txt");
   std::string line;
   while (std::getline(helpcode_path, line)) {
     size_t pos = line.find('=');
