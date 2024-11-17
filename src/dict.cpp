@@ -5,6 +5,7 @@
 #include <tuple>
 #include <utility>
 #include <regex>
+#include <cstdlib>
 
 std::vector<std::string> DictionaryUlPb::alpha_list{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 // clang-format off
@@ -49,6 +50,14 @@ DictionaryUlPb::DictionaryUlPb() {
   if (exit != SQLITE_OK) {
     // logger->error("Failed to open db.");
   }
+
+  const char *username = getenv("USER");
+  if (username == nullptr) {
+    username = getenv("LOGNAME");
+  }
+  std::string usernameStr(username);
+  db_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
+  log_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanyime/app.log";
 }
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {
