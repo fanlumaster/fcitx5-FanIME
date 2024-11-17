@@ -56,6 +56,8 @@ cp ./cutted_flyciku_with_jp.db ~/.local/share/fcitx5-fanime/
 Then, return back to this project,
 
 ```bash
+cp ./assets/pinyin.txt ~/.local/share/fcitx5-fanime/
+cp ./assets/helpcode.txt ~/.local/share/fcitx5-fanime/
 ./lcompile.sh
 ```
 
