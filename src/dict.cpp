@@ -40,6 +40,13 @@ std::vector<std::string> DictionaryUlPb::single_han_list{
 // clang-format on
 
 DictionaryUlPb::DictionaryUlPb() {
+  const char *username = getenv("USER");
+  if (username == nullptr) {
+    username = getenv("LOGNAME");
+  }
+  std::string usernameStr(username);
+  db_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
+  log_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/app.log";
   logger = std::make_unique<Log>(log_path);
   const char *homeDir = getenv("HOME");
   if (!homeDir) {
@@ -50,14 +57,6 @@ DictionaryUlPb::DictionaryUlPb() {
   if (exit != SQLITE_OK) {
     // logger->error("Failed to open db.");
   }
-
-  const char *username = getenv("USER");
-  if (username == nullptr) {
-    username = getenv("LOGNAME");
-  }
-  std::string usernameStr(username);
-  db_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
-  log_path = "/home/" + usernameStr + "/.local/share/fcitx5-fanyime/app.log";
 }
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {
