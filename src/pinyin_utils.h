@@ -10,6 +10,7 @@
 
 class PinyinUtil {
 public:
+  static std::string get_home_path();
   static std::string home_path;
 
   static std::unordered_map<std::string, std::string> sm_keymaps;

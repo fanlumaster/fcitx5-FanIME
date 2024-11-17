@@ -235,7 +235,7 @@ bool FanimeCandidateList::hasNext() const {
   return false;
 }
 
-std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
+std::unique_ptr<Log> FanimeCandidateList::logger_ = std::make_unique<Log>("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
 
 int FanimeCandidateList::generate() {
   FanimeEngine::pure_pinyin = code_;
@@ -508,9 +508,9 @@ void FanimeCandidateList::handle_singlehelpcode() {
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
   if (other_first_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
-  // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
+    // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
 #ifdef FAN_DEBUG
-  // start = std::chrono::high_resolution_clock::now();
+    // start = std::chrono::high_resolution_clock::now();
 #endif
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
 #ifdef FAN_DEBUG
@@ -567,7 +567,7 @@ void FanimeCandidateList::handle_singlehelpcode_during_creating() {
 
 } // namespace
 
-std::unique_ptr<::Log> FanimeState::logger = std::make_unique<Log>("/home/sonnycalcr/.local/share/fcitx5-fanyime/app.log");
+std::unique_ptr<::Log> FanimeState::logger = std::make_unique<Log>("/home/" + PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
 void FanimeState::keyEvent(fcitx::KeyEvent &event) {
   // 如果候选列表不为空，那么，在键入数字键之后，就可以将候选项选中并且上屏了
   if (auto candidateList = ic_->inputPanel().candidateList()) {

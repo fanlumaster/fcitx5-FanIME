@@ -59,6 +59,7 @@ DictionaryUlPb::DictionaryUlPb() {
   }
 
   logger->info("usename: " + PinyinUtil::home_path);
+  logger->info("usename: " + PinyinUtil::get_home_path());
   logger->info("db path: " + db_path);
   logger->info("log path: " + log_path);
 }
