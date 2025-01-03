@@ -45,6 +45,7 @@ Then, clone my repo of this to another directory in your PC: <https://github.com
 
 ```bash
 git clone https://github.com/fanlumaster/FanyDictForIME.git
+git submodule update --init --recursive
 cd ./makecikudb/xnheulpb/makedb/separated_jp_version
 python ./create_db_and_table.py
 python ./insert_data.py

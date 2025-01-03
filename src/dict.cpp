@@ -1,4 +1,5 @@
 #include "dict.h"
+#include "log.h"
 #include "pinyin_utils.h"
 #include <sqlite3.h>
 #include <string>
@@ -6,6 +7,9 @@
 #include <utility>
 #include <regex>
 #include <cstdlib>
+#include <codecvt>
+#include <locale>
+#include "../googlepinyinime-rev/src/include/pinyinime.h"
 
 std::vector<std::string> DictionaryUlPb::alpha_list{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 // clang-format off
@@ -40,6 +44,12 @@ std::vector<std::string> DictionaryUlPb::single_han_list{
 // clang-format on
 
 DictionaryUlPb::DictionaryUlPb() {
+
+  ime_pinyin::im_set_max_lens(64, 32);
+  if (!ime_pinyin::im_open_decoder((PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/dict_pinyin.dat").c_str(), (PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/user_dict.dat").c_str())) {
+    // std::cout << "fany bug.\n";
+  }
+
   const char *username = getenv("USER");
   if (username == nullptr) {
     username = getenv("LOGNAME");
@@ -274,4 +284,28 @@ bool DictionaryUlPb::do_validate(std::string key, std::string jp, std::string va
   if (key.size() % 2 || jp.size() != key.size() / 2 || key.size() != PinyinUtil::cnt_han_chars(value) * 2)
     return false;
   return true;
+}
+
+std::string fromUtf16(const ime_pinyin::char16 *buf, size_t len) {
+  std::u16string utf16Str(reinterpret_cast<const char16_t *>(buf), len);
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  return convert.to_bytes(utf16Str);
+}
+
+std::string DictionaryUlPb::search_sentence_from_ime_engine(const std::string &user_pinyin) {
+  std::string pinyin_str = user_pinyin;
+  const char *pinyin = pinyin_str.c_str();
+  size_t cand_cnt = ime_pinyin::im_search(pinyin, strlen(pinyin));
+  std::string msg;
+  cand_cnt = cand_cnt > 0 ? 1 : 0;
+  for (size_t i = 0; i < cand_cnt; ++i) {
+    ime_pinyin::char16 buf[256] = {0};
+    ime_pinyin::im_get_candidate(i, buf, 255);
+    size_t len = 0;
+    while (buf[len] != 0 && len < 255)
+      ++len;
+    msg = fromUtf16(buf, len);
+  }
+  logger->info("fany msg fja : " + msg);
+  return msg;
 }

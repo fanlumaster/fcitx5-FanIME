@@ -33,6 +33,8 @@ e table
   */
   std::vector<WordItem> generate_tuple(const std::string code);
 
+  std::string search_sentence_from_ime_engine(const std::string &user_pinyin);
+
   DictionaryUlPb();
   ~DictionaryUlPb();
 

@@ -276,6 +276,14 @@ int FanimeCandidateList::generate() {
       }
       if (FanimeEngine::current_candidates.size() > 0)
         FanimeEngine::cached_buffer.push_front(std::make_pair(code_, FanimeEngine::current_candidates));
+      else {
+        std::string quanpin_seg_str = PinyinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(PinyinUtil::pinyin_segmentation(code_));
+        FCITX_INFO() << "quanpin google: " << quanpin_seg_str;
+        FCITX_INFO() << "quanpin google: " << engine_->get_raw_pinyin();
+        std::string sentence = FanimeEngine::fan_dict.search_sentence_from_ime_engine(quanpin_seg_str); // 使用谷歌拼音输入法引擎进行造句
+        FanimeEngine::current_candidates.clear();
+        FanimeEngine::current_candidates.push_back(std::make_tuple(engine_->get_raw_pinyin(), sentence, 0));
+      }
       generate_from_cache();
     }
   }

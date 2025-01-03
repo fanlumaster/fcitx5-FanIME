@@ -200,3 +200,21 @@ bool PinyinUtil::is_all_complete_pinyin(std::string pure_pinyin, std::string seg
   }
   return true;
 }
+
+std::string PinyinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(std::string seg_shangpin) {
+  std::vector<std::string> splitted_shuangpin;
+  boost::split(splitted_shuangpin, seg_shangpin, boost::is_any_of("'"));
+  std::string res = "";
+  for (auto each : splitted_shuangpin) {
+    if (each.size() == 1) {
+      if (sm_keymaps_reversed.count(each)) {
+        res += sm_keymaps_reversed[each] + "'";
+      } else {
+        res += each + "'";
+      }
+    } else if (each.size() == 2) {
+      res += cvt_single_sp_to_pinyin(each) + "'";
+    }
+  }
+  return res.substr(0, res.size() - 1);
+}
