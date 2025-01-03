@@ -733,7 +733,8 @@ void FanimeState::updateUI() {
     fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
     inputPanel.setPreedit(preedit);
     // 嵌在具体的应用中的 preedit
-    fcitx::Text clientPreedit(FanimeEngine::word_to_be_created + PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
+    // fcitx::Text clientPreedit(FanimeEngine::word_to_be_created + PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
+    fcitx::Text clientPreedit(buffer_.userInput(), fcitx::TextFormatFlag::Underline);
     // TODO: 这里无论如何设置，在 chrome 中不生效，鉴定为 chrome 系列的问题，当然，firefox 也有类似的问题，不尽相同。以后有机会可以去看看能否提个 PR
     // clientPreedit.setCursor(PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()).size());
     clientPreedit.setCursor(0);
