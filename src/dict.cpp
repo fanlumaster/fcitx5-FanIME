@@ -306,6 +306,5 @@ std::string DictionaryUlPb::search_sentence_from_ime_engine(const std::string &u
       ++len;
     msg = fromUtf16(buf, len);
   }
-  logger->info("fany msg fja : " + msg);
   return msg;
 }
