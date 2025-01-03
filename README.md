@@ -27,6 +27,42 @@ jjjjj => 分词: j'j'j'j'j !!!no!!!
 
 3、按 Tab 键开启完整的辅助码支持，不过，只支持单字和双字的完整的辅助码，因为三个字以及三个字以上的词语的重复率非常低。
 
+## How to compile and install manually
+
+First, install required libs,
+
+```bash
+yay -S boost
+```
+
+Then, create a directory for the use of storing db file and log file,
+
+```bash
+mkdir ~/.local/share/fcitx5-fanime
+```
+
+Then, clone my repo of this to another directory in your PC: <https://github.com/fanlumaster/FanyDictForIME.git>，and run the following commands to generate database,
+
+```bash
+git clone https://github.com/fanlumaster/FanyDictForIME.git
+cd ./makecikudb/xnheulpb/makedb/separated_jp_version
+python ./create_db_and_table.py
+python ./insert_data.py
+python ./create_index_for_db.py
+cd ./out
+cp ./cutted_flyciku_with_jp.db ~/.local/share/fcitx5-fanime/
+```
+
+Then, return back to this project,
+
+```bash
+cp ./assets/pinyin.txt ~/.local/share/fcitx5-fanime/
+cp ./assets/helpcode.txt ~/.local/share/fcitx5-fanime/
+./lcompile.sh
+```
+
+Then, restart fcitx5, and add fcitx5-fanime, and you could type Chinese words with this IME now.
+
 ## 感谢
 
 - <https://github.com/fcitx/fcitx5>

@@ -5,6 +5,7 @@
 #include <tuple>
 #include <utility>
 #include <regex>
+#include <cstdlib>
 
 std::vector<std::string> DictionaryUlPb::alpha_list{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 // clang-format off
@@ -39,6 +40,13 @@ std::vector<std::string> DictionaryUlPb::single_han_list{
 // clang-format on
 
 DictionaryUlPb::DictionaryUlPb() {
+  const char *username = getenv("USER");
+  if (username == nullptr) {
+    username = getenv("LOGNAME");
+  }
+  std::string usernameStr(username);
+  db_path = PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/cutted_flyciku_with_jp.db";
+  log_path = PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log";
   logger = std::make_unique<Log>(log_path);
   const char *homeDir = getenv("HOME");
   if (!homeDir) {
@@ -49,6 +57,11 @@ DictionaryUlPb::DictionaryUlPb() {
   if (exit != SQLITE_OK) {
     // logger->error("Failed to open db.");
   }
+
+  logger->info("usename: " + PinyinUtil::home_path);
+  logger->info("usename: " + PinyinUtil::get_home_path());
+  logger->info("db path: " + db_path);
+  logger->info("log path: " + log_path);
 }
 
 std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string code) {

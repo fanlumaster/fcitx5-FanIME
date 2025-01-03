@@ -1,6 +1,15 @@
 #include "pinyin_utils.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <cstdlib>
+
+std::string PinyinUtil::get_home_path() {
+  const char *homeDir = getenv("HOME");
+  std::string homeDirStr(homeDir);
+  return homeDir;
+}
+
+std::string PinyinUtil::home_path = PinyinUtil::get_home_path();
 
 std::unordered_map<std::string, std::string> PinyinUtil::sm_keymaps{{"sh", "u"}, {"ch", "i"}, {"zh", "v"}};
 
@@ -12,7 +21,7 @@ std::unordered_map<std::string, std::string> PinyinUtil::ym_keymaps_reversed{{"q
 
 std::unordered_set<std::string> &initialize_quanpin_set() {
   static std::unordered_set<std::string> tmp_set;
-  std::ifstream pinyin_path("/home/sonnycalcr/EDisk/CppCodes/IMECodes/fcitx5-FanIME/assets/pinyin.txt");
+  std::ifstream pinyin_path(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/pinyin.txt");
   std::string line;
   while (std::getline(pinyin_path, line)) {
     line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }), line.end());
@@ -24,7 +33,7 @@ std::unordered_set<std::string> &PinyinUtil::quanpin_set = initialize_quanpin_se
 
 std::unordered_map<std::string, std::string> &initialize_helpcode_keymap() {
   static std::unordered_map<std::string, std::string> tmp_map;
-  std::ifstream helpcode_path("/home/sonnycalcr/.local/share/fcitx5-fanyime/helpcode.txt");
+  std::ifstream helpcode_path(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/helpcode.txt");
   std::string line;
   while (std::getline(helpcode_path, line)) {
     size_t pos = line.find('=');
