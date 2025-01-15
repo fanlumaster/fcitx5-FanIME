@@ -270,7 +270,7 @@ std::string DictionaryUlPb::build_sql_for_creating_word(const std::string &sp_st
 std::string DictionaryUlPb::build_sql_for_inserting_word(std::string key, std::string jp, std::string value) {
   std::string table = choose_tbl(key, jp.size());
   std::string base_sql = "insert into %1% (key, jp, value, weight) values ('%2%', '%3%', '%4%', '%5%');";
-  return boost::str(boost::format(base_sql) % table % key % jp % value % 1);
+  return boost::str(boost::format(base_sql) % table % key % jp % value % 10000); // 默认权重 weight 是 10,000
 }
 
 std::string DictionaryUlPb::choose_tbl(const std::string &sp_str, size_t word_len) {

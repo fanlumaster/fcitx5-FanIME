@@ -516,9 +516,9 @@ void FanimeCandidateList::handle_singlehelpcode() {
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
   if (other_first_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
-    // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
+  // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
 #ifdef FAN_DEBUG
-    // start = std::chrono::high_resolution_clock::now();
+  // start = std::chrono::high_resolution_clock::now();
 #endif
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
 #ifdef FAN_DEBUG
@@ -776,9 +776,7 @@ std::string FanimeEngine::word_to_be_created;
 std::string FanimeEngine::word_pinyin("");
 bool FanimeEngine::during_creating = false;
 
-FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
-  instance->inputContextManager().registerProperty("fanimeState", &factory_);
-}
+FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) { instance->inputContextManager().registerProperty("fanimeState", &factory_); }
 
 void FanimeEngine::activate(const fcitx::InputMethodEntry &entry, fcitx::InputContextEvent &event) {
   FCITX_UNUSED(entry);
