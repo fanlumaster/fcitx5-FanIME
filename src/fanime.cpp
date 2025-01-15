@@ -777,10 +777,6 @@ std::string FanimeEngine::word_pinyin("");
 bool FanimeEngine::during_creating = false;
 
 FanimeEngine::FanimeEngine(fcitx::Instance *instance) : instance_(instance), factory_([this](fcitx::InputContext &ic) { return new FanimeState(this, &ic); }) {
-  conv_ = iconv_open("UTF-8", "GB18030");
-  if (conv_ == reinterpret_cast<iconv_t>(-1)) {
-    throw std::runtime_error("Failed to create converter");
-  }
   instance->inputContextManager().registerProperty("fanimeState", &factory_);
 }
 
