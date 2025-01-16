@@ -70,6 +70,10 @@ private:
   */
   std::vector<std::pair<std::string, std::string>> select_key_and_value(std::string sql_str);
   /*
+    Return:
+  */
+  int check_data(std::string sql_str);
+  /*
     Return: list of complete item data in database table
   */
   int insert_data(std::string sql_str);
@@ -85,6 +89,7 @@ private:
   */
   std::pair<std::string, bool> build_sql(const std::string &sp_str, std::vector<std::string> &pinyin_list);
   std::string build_sql_for_creating_word(const std::string &sp_str);
+  std::string build_sql_for_checking_word(std::string key, std::string jp, std::string value);
   std::string build_sql_for_inserting_word(std::string key, std::string jp, std::string value);
   std::string build_sql_for_updating_word(std::string value);
   std::string choose_tbl(const std::string &sp_str, size_t word_len);

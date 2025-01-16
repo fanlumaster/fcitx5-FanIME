@@ -135,6 +135,9 @@ int DictionaryUlPb::create_word(std::string pinyin, std::string word) {
     jp += pinyin[i];
   if (!do_validate(pinyin, jp, word))
     return ERROR;
+  if (check_data(build_sql_for_checking_word(pinyin, jp, word))) {
+    return OK;
+  }
   insert_data(build_sql_for_inserting_word(pinyin, jp, word));
   return OK;
 }
@@ -234,6 +237,25 @@ std::vector<std::pair<std::string, std::string>> DictionaryUlPb::select_key_and_
   return candidateList;
 }
 
+/**
+ * 检查是否存在某个条目
+ */
+int DictionaryUlPb::check_data(std::string sql_str) {
+  sqlite3_stmt *stmt;
+  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
+  if (exit != SQLITE_OK) {
+    // logger->error("sqlite3_prepare_v2 error.");
+  }
+  bool exists = false;
+  exit = sqlite3_step(stmt);
+  if (exit == SQLITE_ROW) {
+    exists = true;
+    // log
+  }
+  sqlite3_finalize(stmt);
+  return exists;
+}
+
 int DictionaryUlPb::insert_data(std::string sql_str) {
   sqlite3_stmt *stmt;
   int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
@@ -302,6 +324,12 @@ std::string DictionaryUlPb::build_sql_for_creating_word(const std::string &sp_st
     res_sql = boost::str(boost::format(base_sql) % choose_tbl(sp_str.substr(0, i), i / 2) % sp_str.substr(0, i) % default_candicate_page_limit) + " union all " + res_sql;
   }
   return res_sql;
+}
+
+std::string DictionaryUlPb::build_sql_for_checking_word(std::string key, std::string jp, std::string value) {
+  std::string table = choose_tbl(key, jp.size());
+  std::string base_sql = "select 1 from %1% where key = '%2%' and value = '%3%';";
+  return boost::str(boost::format(base_sql) % table % key % value); // 默认权重 weight 是 10,000
 }
 
 std::string DictionaryUlPb::build_sql_for_inserting_word(std::string key, std::string jp, std::string value) {
