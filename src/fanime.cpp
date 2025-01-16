@@ -9,7 +9,6 @@
 #include <fcitx/inputpanel.h>
 #include <fcitx/instance.h>
 #include <fcitx/userinterfacemanager.h>
-#include <punctuation_public.h>
 #include <quickphrase_public.h>
 #include <string>
 #include <utility>
@@ -18,6 +17,7 @@
 #include <boost/locale.hpp>
 #include <boost/range/algorithm/count.hpp>
 #include <boost/circular_buffer.hpp>
+#include "./global.h"
 
 #ifdef FAN_DEBUG
 #include <chrono>
@@ -98,6 +98,11 @@ public:
         FanimeEngine::cached_buffer.clear();
       } else {
         inputContext->commitString(text_to_commit);
+        if (GlobalIME::need_to_update_weight) {
+          GlobalIME::pinyin = engine_->pure_pinyin;
+          // FCITX_INFO() << "fany come here: " << GlobalIME::pinyin << " " << text_to_commit;
+          FanimeEngine::fan_dict.update_weight_by_word(text_to_commit);
+        }
       }
       state->reset();
     }
@@ -581,12 +586,15 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
   if (auto candidateList = ic_->inputPanel().candidateList()) {
     // 数字键的情况
     int idx = event.key().keyListIndex(selectionKeys);
+    GlobalIME::need_to_update_weight = true; // 需要更新权重
     // use space key to commit first candidate
     if (idx == selectionKeys.size() - 1) {
       idx = 0;
+      GlobalIME::need_to_update_weight = false;
     }
     if (event.key().check(FcitxKey_comma) || event.key().check(FcitxKey_period)) {
       idx = 0;
+      GlobalIME::need_to_update_weight = false;
     }
     if (idx >= 0 && idx < candidateList->size() + 1) {
       event.accept();
@@ -639,10 +647,36 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
         return;
       }
       std::string punc, puncAfter;
-      // skip key pad
-      if (c && !event.key().isKeyPad()) {
-        std::tie(punc, puncAfter) = engine_->punctuation()->call<fcitx::IPunctuation::pushPunctuationV2>("zh_CN", ic_, c);
+
+      // 中文标点的处理
+      if (event.key().check(FcitxKey_grave)) {
+        event.filterAndAccept();
+        ic_->commitString("·");
+      } else if (event.key().check(FcitxKey_asciitilde)) {
+        event.filterAndAccept();
+        ic_->commitString("~");
+      } else if (event.key().check(FcitxKey_period)) {
+        event.filterAndAccept();
+        ic_->commitString("。");
+      } else if (event.key().check(FcitxKey_comma)) {
+        event.filterAndAccept();
+        ic_->commitString("，");
+      } else if (event.key().check(FcitxKey_colon)) {
+        event.filterAndAccept();
+        ic_->commitString("：");
+      } else if (event.key().check(FcitxKey_period)) {
+        event.filterAndAccept();
+        ic_->commitString("。");
+      } else if (event.key().check(FcitxKey_question)) {
+        event.filterAndAccept();
+        ic_->commitString("？");
       }
+
+      // skip key pad
+      // if (c && !event.key().isKeyPad()) {
+      //   std::tie(punc, puncAfter) = engine_->punctuation()->call<fcitx::IPunctuation::pushPunctuationV2>("zh_CN", ic_, c);
+      // }
+
       //  TODO: 重新设计 quickphrase
       /*
       if (event.key().check(FcitxKey_semicolon) && engine_->quickphrase()) {

@@ -10,6 +10,7 @@
 #include <codecvt>
 #include <locale>
 #include "../googlepinyinime-rev/src/include/pinyinime.h"
+#include "./global.h"
 
 std::vector<std::string> DictionaryUlPb::alpha_list{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 // clang-format off
@@ -138,6 +139,40 @@ int DictionaryUlPb::create_word(std::string pinyin, std::string word) {
   return OK;
 }
 
+std::string DictionaryUlPb::build_sql_for_updating_word(std::string word) {
+  std::string pinyin = GlobalIME::pinyin;
+  std::string jp;
+  for (size_t i = 0; i < pinyin.size(); i += 2)
+    jp += pinyin[i];
+  if (!do_validate(pinyin, jp, word))
+    return "";
+  std::string table = choose_tbl(pinyin, jp.size());
+  // update %1% set weight = ( select MAX(weight) + 1 from %1% AS sub where sub.key = '%2%') where key = '%2%' and value = '%3%';
+  std::string base_sql = "update %1% set weight = ( select MAX(weight) + 1 from %1% AS sub where sub.key = '%2%') where key = '%2%' and value = '%3%';";
+  std::string res_sql = boost::str(boost::format(base_sql) % table % pinyin % word);
+  logger->info("fany update word: " + res_sql);
+  return res_sql;
+}
+
+int DictionaryUlPb::update_data(std::string sql_str) {
+  sqlite3_stmt *stmt;
+  int exit = sqlite3_prepare_v2(db, sql_str.c_str(), -1, &stmt, 0);
+  if (exit != SQLITE_OK) {
+    // logger->error("sqlite3_prepare_v2 error.");
+  }
+  exit = sqlite3_step(stmt);
+  if (exit != SQLITE_DONE) {
+    // log
+  }
+  sqlite3_finalize(stmt);
+  return 0;
+}
+
+int DictionaryUlPb::update_weight_by_word(std::string word) {
+  update_data(build_sql_for_updating_word(word));
+  return OK;
+}
+
 // generate_with_seg_pinyin
 
 DictionaryUlPb::~DictionaryUlPb() {
@@ -208,6 +243,7 @@ int DictionaryUlPb::insert_data(std::string sql_str) {
   if (exit != SQLITE_DONE) {
     // log
   }
+  sqlite3_finalize(stmt);
   return 0;
 }
 
