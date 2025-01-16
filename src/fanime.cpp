@@ -670,6 +670,57 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       } else if (event.key().check(FcitxKey_question)) {
         event.filterAndAccept();
         ic_->commitString("？");
+      } else if (event.key().check(FcitxKey_backslash)) {
+        event.filterAndAccept();
+        ic_->commitString("、");
+      } else if (event.key().check(FcitxKey_bracketleft)) {
+        event.filterAndAccept();
+        ic_->commitString("【");
+      } else if (event.key().check(FcitxKey_bracketright)) {
+        event.filterAndAccept();
+        ic_->commitString("】");
+      } else if (event.key().check(FcitxKey_semicolon)) {
+        event.filterAndAccept();
+        ic_->commitString("；");
+      } else if (event.key().check(FcitxKey_apostrophe)) { // 单引号
+        event.filterAndAccept();
+        if (GlobalIME::firstSingleQuotation) {
+          GlobalIME::firstSingleQuotation = false;
+          ic_->commitString("‘");
+        } else {
+          GlobalIME::firstSingleQuotation = true;
+          ic_->commitString("’");
+        }
+      } else if (event.key().check(FcitxKey_quotedbl)) { // 双引号
+        event.filterAndAccept();
+        if (GlobalIME::firstDoubeQuotation) {
+          GlobalIME::firstDoubeQuotation = false;
+          ic_->commitString("“");
+        } else {
+          GlobalIME::firstDoubeQuotation = true;
+          ic_->commitString("”");
+        }
+      } else if (event.key().check(FcitxKey_less)) { // 左书名号
+        event.filterAndAccept();
+        ic_->commitString("《");
+      } else if (event.key().check(FcitxKey_greater)) { // 右书名号
+        event.filterAndAccept();
+        ic_->commitString("》");
+      } else if (event.key().check(FcitxKey_minus)) { // 破折号
+        event.filterAndAccept();
+        ic_->commitString("——");
+      } else if (event.key().check(FcitxKey_asciicircum)) { // 省略号
+        event.filterAndAccept();
+        ic_->commitString("……");
+      } else if (event.key().check(FcitxKey_exclam)) { // 感叹号
+        event.filterAndAccept();
+        ic_->commitString("！");
+      } else if (event.key().check(FcitxKey_parenleft)) { // 左括号
+        event.filterAndAccept();
+        ic_->commitString("（");
+      } else if (event.key().check(FcitxKey_parenright)) { // 右括号
+        event.filterAndAccept();
+        ic_->commitString("）");
       }
 
       // skip key pad
