@@ -140,7 +140,8 @@ int DictionaryUlPb::create_word(std::string pinyin, std::string word) {
 }
 
 std::string DictionaryUlPb::build_sql_for_updating_word(std::string word) {
-  std::string pinyin = GlobalIME::pinyin;
+  int han_cnt = PinyinUtil::cnt_han_chars(word);
+  std::string pinyin = GlobalIME::pinyin.substr(0, han_cnt * 2);
   std::string jp;
   for (size_t i = 0; i < pinyin.size(); i += 2)
     jp += pinyin[i];
@@ -150,7 +151,7 @@ std::string DictionaryUlPb::build_sql_for_updating_word(std::string word) {
   // update %1% set weight = ( select MAX(weight) + 1 from %1% AS sub where sub.key = '%2%') where key = '%2%' and value = '%3%';
   std::string base_sql = "update %1% set weight = ( select MAX(weight) + 1 from %1% AS sub where sub.key = '%2%') where key = '%2%' and value = '%3%';";
   std::string res_sql = boost::str(boost::format(base_sql) % table % pinyin % word);
-  logger->info("fany update word: " + res_sql);
+  // logger->info("fany update word: " + res_sql);
   return res_sql;
 }
 
