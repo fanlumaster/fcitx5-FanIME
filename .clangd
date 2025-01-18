@@ -1,13 +1,13 @@
 CompileFlags:
   Add: [
     "-std=c++17",
-    -I/home/sonnycalcr/EDisk/CppCodes/IMECodes/fcitx5-FanIME/src/,
-    -I/usr/include/Fcitx5/Utils/,
-    -I/usr/include/Fcitx5/Utils/fcitx-utils/,
-    -I/usr/include/Fcitx5/Core/,
-    -I/usr/include/Fcitx5/Config/,
-    -I/usr/include/Fcitx5/Module/,
-    -I/usr/include/Fcitx5/Module/fcitx-module/punctuation/,
-    -I/usr/include/Fcitx5/Module/fcitx-module/quickphrase/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Utils/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Utils/fcitx-utils/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Core,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Config/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Module/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Module/fcitx-module/quickphrase/,
+    -I/opt/homebrew/opt/boost/include/,
+    -I/Library/Input Methods/Fcitx5.app/Contents/include/Fcitx5/Module/fcitx-module/fcitx5-chinese-addons/modules/punctuation/,
     -Wunused-variable,
   ]

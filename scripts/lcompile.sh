@@ -1,7 +1,8 @@
 # debug version
 mkdir -p build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DFAN_DEBUG=1
-make
-sudo make install
-cd ..
+mkdir -p macos-arm64
+cd macos-arm64
+cmake ../..
+cd ../..
+CGO_CFLAGS="-mmacosx-version-min=13" GOFLAGS="-ldflags=-buildid=" cmake --build build/macos-arm64

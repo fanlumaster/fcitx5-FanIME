@@ -10,6 +10,7 @@
 #include <fcitx/instance.h>
 #include <fcitx/userinterfacemanager.h>
 #include <quickphrase_public.h>
+// #include <punctuation_public.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -521,9 +522,9 @@ void FanimeCandidateList::handle_singlehelpcode() {
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), last_helpcode_matched_list.begin(), last_helpcode_matched_list.end());
   if (other_first_helpcode_matched_list.size() > 0)
     FanimeEngine::current_candidates.insert(FanimeEngine::current_candidates.end(), other_first_helpcode_matched_list.begin(), other_first_helpcode_matched_list.end());
-  // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
+    // 然后当作不完整的拼音来进行模糊查询得到的结果紧随着放在后面
 #ifdef FAN_DEBUG
-  // start = std::chrono::high_resolution_clock::now();
+    // start = std::chrono::high_resolution_clock::now();
 #endif
   auto tmp_cand_list = FanimeEngine::fan_dict.generate(code_);
 #ifdef FAN_DEBUG
@@ -815,7 +816,11 @@ void FanimeState::updateUI() {
     std::string aux("");
     if (engine_->get_use_fullhelpcode())
       aux = "🪓"; // 作个标记(辅助码的“斧”)
-    fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
+    std::string pinyin_seg = PinyinUtil::pinyin_segmentation(buffer_.userInput());
+    std::string blank_placeholder = "    ";
+    if (pinyin_seg.size() > 5)
+      blank_placeholder = "";
+    fcitx::Text preedit(FanimeEngine::word_to_be_created + pinyin_seg + aux + blank_placeholder); // 默认状态下 append 4 个 U+2000 字符。然后，等整个字符的宽度大于 5 的时候，就 remove 掉尾部的 4 个不可见字符
     inputPanel.setPreedit(preedit);
     // 嵌在具体的应用中的 preedit
     // fcitx::Text clientPreedit(FanimeEngine::word_to_be_created + PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()), fcitx::TextFormatFlag::Underline);
