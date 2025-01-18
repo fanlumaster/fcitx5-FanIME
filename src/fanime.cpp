@@ -722,6 +722,9 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       } else if (event.key().check(FcitxKey_parenright)) { // 右括号
         event.filterAndAccept();
         ic_->commitString("）");
+      } else if (event.key().check(FcitxKey_dollar)) { // 货币符号
+        event.filterAndAccept();
+        ic_->commitString("¥");
       }
 
       // skip key pad
