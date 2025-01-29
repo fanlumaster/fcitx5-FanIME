@@ -707,7 +707,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       } else if (event.key().check(FcitxKey_greater)) { // 右书名号
         event.filterAndAccept();
         ic_->commitString("》");
-      } else if (event.key().check(FcitxKey_minus)) { // 破折号
+      } else if (event.key().check(FcitxKey_underscore)) { // 破折号
         event.filterAndAccept();
         ic_->commitString("——");
       } else if (event.key().check(FcitxKey_asciicircum)) { // 省略号
