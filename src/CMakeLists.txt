@@ -46,7 +46,7 @@ set(SOURCES
 
 # Make sure it produce fanime.so instead of libfanime.so
 add_library(fanime SHARED ${HEADERS} ${SOURCES})
-target_link_libraries(fanime PRIVATE Fcitx5::Core Fcitx5::Module::QuickPhrase SQLite::SQLite3)
+target_link_libraries(fanime PRIVATE Fcitx5::Core Fcitx5::Module::Punctuation  Fcitx5::Module::QuickPhrase SQLite::SQLite3)
 install(TARGETS fanime DESTINATION "${FCITX_INSTALL_LIBDIR}/fcitx5")
 
 # Addon config file

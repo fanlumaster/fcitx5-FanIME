@@ -9,6 +9,7 @@
 #include <fcitx/inputpanel.h>
 #include <fcitx/instance.h>
 #include <fcitx/userinterfacemanager.h>
+#include <punctuation_public.h>
 #include <quickphrase_public.h>
 #include <string>
 #include <utility>
@@ -648,85 +649,10 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       }
       std::string punc, puncAfter;
 
-      // 中文标点的处理
-      if (event.key().check(FcitxKey_grave)) {
-        event.filterAndAccept();
-        ic_->commitString("·");
-      } else if (event.key().check(FcitxKey_asciitilde)) {
-        event.filterAndAccept();
-        ic_->commitString("~");
-      } else if (event.key().check(FcitxKey_period)) {
-        event.filterAndAccept();
-        ic_->commitString("。");
-      } else if (event.key().check(FcitxKey_comma)) {
-        event.filterAndAccept();
-        ic_->commitString("，");
-      } else if (event.key().check(FcitxKey_colon)) {
-        event.filterAndAccept();
-        ic_->commitString("：");
-      } else if (event.key().check(FcitxKey_period)) {
-        event.filterAndAccept();
-        ic_->commitString("。");
-      } else if (event.key().check(FcitxKey_question)) {
-        event.filterAndAccept();
-        ic_->commitString("？");
-      } else if (event.key().check(FcitxKey_backslash)) {
-        event.filterAndAccept();
-        ic_->commitString("、");
-      } else if (event.key().check(FcitxKey_bracketleft)) {
-        event.filterAndAccept();
-        ic_->commitString("【");
-      } else if (event.key().check(FcitxKey_bracketright)) {
-        event.filterAndAccept();
-        ic_->commitString("】");
-      } else if (event.key().check(FcitxKey_semicolon)) {
-        event.filterAndAccept();
-        ic_->commitString("；");
-      } else if (event.key().check(FcitxKey_apostrophe)) { // 单引号
-        event.filterAndAccept();
-        if (GlobalIME::firstSingleQuotation) {
-          GlobalIME::firstSingleQuotation = false;
-          ic_->commitString("‘");
-        } else {
-          GlobalIME::firstSingleQuotation = true;
-          ic_->commitString("’");
-        }
-      } else if (event.key().check(FcitxKey_quotedbl)) { // 双引号
-        event.filterAndAccept();
-        if (GlobalIME::firstDoubeQuotation) {
-          GlobalIME::firstDoubeQuotation = false;
-          ic_->commitString("“");
-        } else {
-          GlobalIME::firstDoubeQuotation = true;
-          ic_->commitString("”");
-        }
-      } else if (event.key().check(FcitxKey_less)) { // 左书名号
-        event.filterAndAccept();
-        ic_->commitString("《");
-      } else if (event.key().check(FcitxKey_greater)) { // 右书名号
-        event.filterAndAccept();
-        ic_->commitString("》");
-      } else if (event.key().check(FcitxKey_minus)) { // 破折号
-        event.filterAndAccept();
-        ic_->commitString("——");
-      } else if (event.key().check(FcitxKey_asciicircum)) { // 省略号
-        event.filterAndAccept();
-        ic_->commitString("……");
-      } else if (event.key().check(FcitxKey_exclam)) { // 感叹号
-        event.filterAndAccept();
-        ic_->commitString("！");
-      } else if (event.key().check(FcitxKey_parenleft)) { // 左括号
-        event.filterAndAccept();
-        ic_->commitString("（");
-      } else if (event.key().check(FcitxKey_parenright)) { // 右括号
-        event.filterAndAccept();
-        ic_->commitString("）");
-      }
-
       // skip key pad
-      // if (c && !event.key().isKeyPad()) {
-      //   std::tie(punc, puncAfter) = engine_->punctuation()->call<fcitx::IPunctuation::pushPunctuationV2>("zh_CN", ic_, c);
-      // }
+      if (c && !event.key().isKeyPad()) {
+        std::tie(punc, puncAfter) = engine_->punctuation()->call<fcitx::IPunctuation::pushPunctuationV2>("zh_CN", ic_, c);
+      }
 
       //  TODO: 重新设计 quickphrase
       /*
