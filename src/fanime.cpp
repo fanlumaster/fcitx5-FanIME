@@ -599,7 +599,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     }
     if (idx >= 0 && idx < candidateList->size() + 1) {
       event.accept();
-      candidateList->candidate(idx).select(ic_);
+        candidateList->candidate(idx).select(ic_);
       if (event.key().check(FcitxKey_comma))
         ic_->commitString("，");
       if (event.key().check(FcitxKey_period))
@@ -650,82 +650,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       std::string punc, puncAfter;
 
       // 中文标点的处理
-      if (event.key().check(FcitxKey_grave)) {
-        event.filterAndAccept();
-        ic_->commitString("·");
-      } else if (event.key().check(FcitxKey_asciitilde)) {
-        event.filterAndAccept();
-        ic_->commitString("~");
-      } else if (event.key().check(FcitxKey_period)) {
-        event.filterAndAccept();
-        ic_->commitString("。");
-      } else if (event.key().check(FcitxKey_comma)) {
-        event.filterAndAccept();
-        ic_->commitString("，");
-      } else if (event.key().check(FcitxKey_colon)) {
-        event.filterAndAccept();
-        ic_->commitString("：");
-      } else if (event.key().check(FcitxKey_period)) {
-        event.filterAndAccept();
-        ic_->commitString("。");
-      } else if (event.key().check(FcitxKey_question)) {
-        event.filterAndAccept();
-        ic_->commitString("？");
-      } else if (event.key().check(FcitxKey_backslash)) {
-        event.filterAndAccept();
-        ic_->commitString("、");
-      } else if (event.key().check(FcitxKey_bracketleft)) {
-        event.filterAndAccept();
-        ic_->commitString("【");
-      } else if (event.key().check(FcitxKey_bracketright)) {
-        event.filterAndAccept();
-        ic_->commitString("】");
-      } else if (event.key().check(FcitxKey_semicolon)) {
-        event.filterAndAccept();
-        ic_->commitString("；");
-      } else if (event.key().check(FcitxKey_apostrophe)) { // 单引号
-        event.filterAndAccept();
-        if (GlobalIME::firstSingleQuotation) {
-          GlobalIME::firstSingleQuotation = false;
-          ic_->commitString("‘");
-        } else {
-          GlobalIME::firstSingleQuotation = true;
-          ic_->commitString("’");
-        }
-      } else if (event.key().check(FcitxKey_quotedbl)) { // 双引号
-        event.filterAndAccept();
-        if (GlobalIME::firstDoubeQuotation) {
-          GlobalIME::firstDoubeQuotation = false;
-          ic_->commitString("“");
-        } else {
-          GlobalIME::firstDoubeQuotation = true;
-          ic_->commitString("”");
-        }
-      } else if (event.key().check(FcitxKey_less)) { // 左书名号
-        event.filterAndAccept();
-        ic_->commitString("《");
-      } else if (event.key().check(FcitxKey_greater)) { // 右书名号
-        event.filterAndAccept();
-        ic_->commitString("》");
-      } else if (event.key().check(FcitxKey_underscore)) { // 破折号
-        event.filterAndAccept();
-        ic_->commitString("——");
-      } else if (event.key().check(FcitxKey_asciicircum)) { // 省略号
-        event.filterAndAccept();
-        ic_->commitString("……");
-      } else if (event.key().check(FcitxKey_exclam)) { // 感叹号
-        event.filterAndAccept();
-        ic_->commitString("！");
-      } else if (event.key().check(FcitxKey_parenleft)) { // 左括号
-        event.filterAndAccept();
-        ic_->commitString("（");
-      } else if (event.key().check(FcitxKey_parenright)) { // 右括号
-        event.filterAndAccept();
-        ic_->commitString("）");
-      } else if (event.key().check(FcitxKey_dollar)) { // 货币符号
-        event.filterAndAccept();
-        ic_->commitString("¥");
-      }
+      handleFullShapePunctuation(event);
 
       // skip key pad
       // if (c && !event.key().isKeyPad()) {
@@ -798,7 +723,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
 
   // 1. current text buffer is empty and current key pressed is alpha
   // 2. current text buffer is not empty and current key pressed is alpha
-  buffer_.type(event.key().sym()); // update buffer_, so when the fucking event itself is updated?
+  buffer_.type(event.key().sym()); // update buffer_
   updateUI();
   return event.filterAndAccept();
 }
@@ -912,6 +837,85 @@ void FanimeEngine::reset(const fcitx::InputMethodEntry &, fcitx::InputContextEve
   set_use_fullhelpcode(false);
   set_raw_pinyin("");
   state->reset();
+}
+
+void FanimeState::handleFullShapePunctuation(fcitx::KeyEvent &event) {
+  if (event.key().check(FcitxKey_grave)) {
+    event.filterAndAccept();
+    ic_->commitString("·");
+  } else if (event.key().check(FcitxKey_asciitilde)) {
+    event.filterAndAccept();
+    ic_->commitString("~");
+  } else if (event.key().check(FcitxKey_period)) {
+    event.filterAndAccept();
+    ic_->commitString("。");
+  } else if (event.key().check(FcitxKey_comma)) {
+    event.filterAndAccept();
+    ic_->commitString("，");
+  } else if (event.key().check(FcitxKey_colon)) {
+    event.filterAndAccept();
+    ic_->commitString("：");
+  } else if (event.key().check(FcitxKey_period)) {
+    event.filterAndAccept();
+    ic_->commitString("。");
+  } else if (event.key().check(FcitxKey_question)) {
+    event.filterAndAccept();
+    ic_->commitString("？");
+  } else if (event.key().check(FcitxKey_backslash)) {
+    event.filterAndAccept();
+    ic_->commitString("、");
+  } else if (event.key().check(FcitxKey_bracketleft)) {
+    event.filterAndAccept();
+    ic_->commitString("【");
+  } else if (event.key().check(FcitxKey_bracketright)) {
+    event.filterAndAccept();
+    ic_->commitString("】");
+  } else if (event.key().check(FcitxKey_semicolon)) {
+    event.filterAndAccept();
+    ic_->commitString("；");
+  } else if (event.key().check(FcitxKey_apostrophe)) { // 单引号
+    event.filterAndAccept();
+    if (GlobalIME::firstSingleQuotation) {
+      GlobalIME::firstSingleQuotation = false;
+      ic_->commitString("‘");
+    } else {
+      GlobalIME::firstSingleQuotation = true;
+      ic_->commitString("’");
+    }
+  } else if (event.key().check(FcitxKey_quotedbl)) { // 双引号
+    event.filterAndAccept();
+    if (GlobalIME::firstDoubeQuotation) {
+      GlobalIME::firstDoubeQuotation = false;
+      ic_->commitString("“");
+    } else {
+      GlobalIME::firstDoubeQuotation = true;
+      ic_->commitString("”");
+    }
+  } else if (event.key().check(FcitxKey_less)) { // 左书名号
+    event.filterAndAccept();
+    ic_->commitString("《");
+  } else if (event.key().check(FcitxKey_greater)) { // 右书名号
+    event.filterAndAccept();
+    ic_->commitString("》");
+  } else if (event.key().check(FcitxKey_underscore)) { // 破折号
+    event.filterAndAccept();
+    ic_->commitString("——");
+  } else if (event.key().check(FcitxKey_asciicircum)) { // 省略号
+    event.filterAndAccept();
+    ic_->commitString("……");
+  } else if (event.key().check(FcitxKey_exclam)) { // 感叹号
+    event.filterAndAccept();
+    ic_->commitString("！");
+  } else if (event.key().check(FcitxKey_parenleft)) { // 左括号
+    event.filterAndAccept();
+    ic_->commitString("（");
+  } else if (event.key().check(FcitxKey_parenright)) { // 右括号
+    event.filterAndAccept();
+    ic_->commitString("）");
+  } else if (event.key().check(FcitxKey_dollar)) { // 货币符号
+    event.filterAndAccept();
+    ic_->commitString("¥");
+  }
 }
 
 FCITX_ADDON_FACTORY(FanimeEngineFactory);

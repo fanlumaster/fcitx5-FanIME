@@ -102,6 +102,21 @@ std::vector<DictionaryUlPb::WordItem> DictionaryUlPb::generate(const std::string
 }
 
 void DictionaryUlPb::generate_for_single_char(std::vector<DictionaryUlPb::WordItem> &candidate_list, std::string code) {
+  // candidate_list.push_back(std::make_tuple(code, "，", 1));
+  // candidate_list.push_back(std::make_tuple(code, "。", 1));
+  // candidate_list.push_back(std::make_tuple(code, "《", 1));
+  // candidate_list.push_back(std::make_tuple(code, "》", 1));
+  // candidate_list.push_back(std::make_tuple(code, "？", 1));
+  // candidate_list.push_back(std::make_tuple(code, "【", 1));
+  // candidate_list.push_back(std::make_tuple(code, "】", 1));
+  // candidate_list.push_back(std::make_tuple(code, "、", 1));
+  // candidate_list.push_back(std::make_tuple(code, "·", 1));
+  // candidate_list.push_back(std::make_tuple(code, "¥", 1));
+  // candidate_list.push_back(std::make_tuple(code, "……", 1));
+  // candidate_list.push_back(std::make_tuple(code, "——", 1));
+  // candidate_list.push_back(std::make_tuple(code, "（", 1));
+  // candidate_list.push_back(std::make_tuple(code, "）", 1));
+
   std::string s = single_han_list[code[0] - 'a'];
   for (size_t i = 0; i < s.length();) {
     size_t cplen = PinyinUtil::get_first_char_size(s.substr(i, s.size() - i));

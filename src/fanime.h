@@ -34,6 +34,8 @@ private:
   fcitx::InputBuffer buffer_{{fcitx::InputBufferOption::AsciiOnly, fcitx::InputBufferOption::FixedCursor}};
   bool use_fullhelpcode_ = false;
   static std::unique_ptr<::Log> logger;
+
+  void handleFullShapePunctuation(fcitx::KeyEvent &event);
 };
 
 class FanimeEngine : public fcitx::InputMethodEngineV2 {
