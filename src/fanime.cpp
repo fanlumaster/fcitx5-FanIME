@@ -599,7 +599,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     }
     if (idx >= 0 && idx < candidateList->size() + 1) {
       event.accept();
-        candidateList->candidate(idx).select(ic_);
+      candidateList->candidate(idx).select(ic_);
       if (event.key().check(FcitxKey_comma))
         ic_->commitString("，");
       if (event.key().check(FcitxKey_period))
@@ -755,7 +755,8 @@ void FanimeState::updateUI() {
     fcitx::Text clientPreedit(buffer_.userInput(), fcitx::TextFormatFlag::Underline);
     // TODO: 这里无论如何设置，在 chrome 中不生效，鉴定为 chrome 系列的问题，当然，firefox 也有类似的问题，不尽相同。以后有机会可以去看看能否提个 PR
     // clientPreedit.setCursor(PinyinUtil::extract_preview(ic_->inputPanel().candidateList()->candidate(0).text().toString()).size());
-    clientPreedit.setCursor(0);
+    // 设置光标在拼音末尾
+    clientPreedit.setCursor(buffer_.userInput().size());
     inputPanel.setClientPreedit(clientPreedit); // 嵌在应用程序中的
   } else {
     fcitx::Text clientPreedit(buffer_.userInput());
