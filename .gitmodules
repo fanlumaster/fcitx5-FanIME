@@ -1,3 +1,3 @@
 [submodule "googlepinyinime-rev"]
 	path = googlepinyinime-rev
-	url = git@github.com:fanlumaster/googlepinyinime-rev.git
+	url = https://github.com/fanlumaster/googlepinyinime-rev.git
