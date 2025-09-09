@@ -45,6 +45,7 @@ Then, clone my repo of this to another directory in your PC: <https://github.com
 
 ```bash
 git clone https://github.com/fanlumaster/FanyDictForIME.git
+cd ./FanyDictForIME
 git submodule update --init --recursive
 cd ./makecikudb/xnheulpb/makedb/separated_jp_version
 python ./create_db_and_table.py
@@ -59,7 +60,8 @@ Then, return back to this project,
 ```bash
 cp ./assets/pinyin.txt ~/.local/share/fcitx5-fanime/
 cp ./assets/helpcode.txt ~/.local/share/fcitx5-fanime/
-./lcompile.sh
+cp ./googlepinyinime-rev/data/*.dat ~/.local/share/fcitx5-fanime/
+./scripts/lcompile.sh
 ```
 
 Then, restart fcitx5, and add fcitx5-fanime, and you could type Chinese words with this IME now.
