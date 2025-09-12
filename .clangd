@@ -1,6 +1,6 @@
 CompileFlags:
   Add: [
-    "-std=c++17",
+    "-std=c++20",
     -I/home/sonnycalcr/EDisk/CppCodes/IMECodes/fcitx5-FanIME/src/,
     -I/usr/include/Fcitx5/Utils/,
     -I/usr/include/Fcitx5/Utils/fcitx-utils/,
