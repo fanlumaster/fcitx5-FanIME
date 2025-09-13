@@ -55,11 +55,11 @@ public:
     }
     auto state = inputContext->propertyFor(engine_->factory());
 
-    auto committed_han_size = PinyinUtil::cnt_han_chars(text_to_commit);
-    // 如果是前面的拼音子串对应的汉字(词)上屏
-    if (FanimeEngine::can_create_word && committed_han_size < FanimeEngine::supposed_han_cnt) {
+    auto text_to_commit_han_size = PinyinUtil::cnt_han_chars(text_to_commit);
+    // 如果是前面的拼音子串对应的汉字(词)上屏，并且符合造词的条件，那么，就可以造词了
+    if (FanimeEngine::can_create_word && text_to_commit_han_size < FanimeEngine::supposed_han_cnt) {
       // 无论是否是辅助码辅出来的结果，都要去尾
-      if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'')
+      if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'') // 单码辅助的情况
         FanimeEngine::seg_pinyin = FanimeEngine::seg_pinyin.substr(0, FanimeEngine::seg_pinyin.size() - 2);
       // 使用完整辅助码的情况下时的去尾
       if (engine_->get_use_fullhelpcode()) {
@@ -68,7 +68,7 @@ public:
       }
       std::string tmp_seg_pinyin = FanimeEngine::seg_pinyin;
       size_t cur_index = 0;
-      while (cur_index < committed_han_size) {
+      while (cur_index < text_to_commit_han_size) {
         size_t pos = tmp_seg_pinyin.find('\'');
         FanimeEngine::word_pinyin += tmp_seg_pinyin.substr(0, 2);
         tmp_seg_pinyin = tmp_seg_pinyin.substr(pos + 1, tmp_seg_pinyin.size() - (pos + 1));
@@ -82,7 +82,7 @@ public:
     } else {
       if (FanimeEngine::word_to_be_created != "") {
         // 无论是否是辅助码辅出来的结果，都要去尾
-        if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'')
+        if (FanimeEngine::seg_pinyin[FanimeEngine::seg_pinyin.size() - 2] == '\'') // 单码辅助的情况
           FanimeEngine::seg_pinyin = FanimeEngine::seg_pinyin.substr(0, FanimeEngine::seg_pinyin.size() - 2);
         // 使用完整辅助码的情况下时的去尾
         if (engine_->get_use_fullhelpcode()) {
@@ -583,7 +583,7 @@ void FanimeCandidateList::handle_singlehelpcode_during_creating() {
 
 std::unique_ptr<::Log> FanimeState::logger = std::make_unique<Log>(PinyinUtil::get_home_path() + "/.local/share/fcitx5-fanime/app.log");
 void FanimeState::keyEvent(fcitx::KeyEvent &event) {
-  // 如果候选列表不为空，那么，在键入数字键之后，就可以将候选项选中并且上屏了
+  // 如果候选列表不为空，那么，要么按下数字键 commit 候选项，要么翻页
   if (auto candidateList = ic_->inputPanel().candidateList()) {
     // 数字键的情况
     int idx = event.key().keyListIndex(selectionKeys);
@@ -607,7 +607,7 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       return;
     }
     // 翻页键的情况，全局默认的是上箭头和下箭头
-    // 向前翻页 -> 上箭头或者
+    // 向前翻页 -> 上箭头或者 -
     if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultPrevPage()) || event.key().check(FcitxKey_minus)) {
       if (auto *pageable = candidateList->toPageable(); pageable && pageable->hasPrev()) {
         event.accept();
@@ -620,19 +620,6 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     // 向后翻页或者 TAB 键
     if (event.key().checkKeyList(engine_->instance()->globalConfig().defaultNextPage()) || event.key().check(FcitxKey_equal) || event.key().check(FcitxKey_Tab)) {
       if (auto *pageable = candidateList->toPageable(); pageable && pageable->hasNext()) {
-        if (event.key().check(FcitxKey_Tab)) {
-          // 在非造字模式的情况下，只有单字和双字可以用完整的辅助码
-          if (buffer_.userInput().size() % 2 != 1) {
-            engine_->set_use_fullhelpcode(true);
-            engine_->set_raw_pinyin(buffer_.userInput());
-            auto &inputPanel = ic_->inputPanel();
-            // 嵌在候选框中的 preedit
-            std::string aux = "🪓"; // 作个标记(辅助码的“斧”)
-            fcitx::Text preedit(FanimeEngine::word_to_be_created + PinyinUtil::pinyin_segmentation(buffer_.userInput()) + aux);
-            inputPanel.setPreedit(preedit);
-            ic_->updatePreedit();
-          }
-        }
         pageable->next();
         ic_->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
       }
@@ -690,14 +677,11 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
       return;
     }
   } else { // current text buffer is not empty
+    /* Here we do not handle alpha char */
     if (event.key().check(FcitxKey_BackSpace)) {
-      // 取消使用完整的辅助码
-      if (buffer_.userInput() == engine_->get_raw_pinyin() && engine_->get_use_fullhelpcode()) {
-        engine_->set_use_fullhelpcode(false);
-        engine_->set_raw_pinyin("");
-      } else {
-        buffer_.backspace();
-      }
+      // 首先清理状态，因为一旦发生了 backspace 的情况，就要清理状态，而全码辅助的情况只会出现在拼音字符输入的情况
+      reset_fullhelpcode_mode();
+      buffer_.backspace();
       if (!buffer_.size())
         // 清理状态
         reset();
@@ -718,9 +702,21 @@ void FanimeState::keyEvent(fcitx::KeyEvent &event) {
     }
   }
 
+  //
   // 1. current text buffer is empty and current key pressed is alpha
   // 2. current text buffer is not empty and current key pressed is alpha
-  buffer_.type(event.key().sym()); // update buffer_, so when the fucking event itself is updated?
+  //
+  buffer_.type(event.key().sym()); // update buffer_, 即，按下普通的拼音字符的情况
+
+  // Clear state first
+  reset_fullhelpcode_mode();
+  std::string cur_code = buffer_.userInput();
+  FCITX_INFO() << "cur_code: " << cur_code;
+  if (is_trigger_fullhelpcode_mode(cur_code)) {
+    engine_->set_use_fullhelpcode(true);
+    engine_->set_raw_pinyin(cur_code.substr(0, cur_code.size() - 2));
+  }
+
   updateUI();
   return event.filterAndAccept();
 }
@@ -768,6 +764,36 @@ void FanimeState::reset() {
   FanimeEngine::word_to_be_created = "";
   FanimeEngine::word_pinyin = "";
   updateUI();
+}
+
+/**
+ * @brief
+ *
+ * @return true
+     需要满足
+       - 最后一位的字符为大写
+       - 排除最后两位的字符之后的字符串是纯粹完整的双拼，即，能够无损地转成全拼
+ * @return false
+ */
+bool FanimeState::is_trigger_fullhelpcode_mode(std::string code) {
+  // 至少四码才能全码辅助
+  if (code.size() < 4 || !code.size() % 2)
+    return false;
+  if (!isupper(static_cast<unsigned char>(code.back()))) {
+    return false;
+  }
+  std::string pure_pinyin = code.substr(0, code.size() - 2);
+  std::string seg_pinyin = PinyinUtil::pinyin_segmentation(pure_pinyin);
+  if (!PinyinUtil::is_all_complete_pinyin(pure_pinyin, seg_pinyin)) {
+    return false;
+  }
+  return true;
+}
+
+bool FanimeState::reset_fullhelpcode_mode() {
+  engine_->set_use_fullhelpcode(false);
+  engine_->set_raw_pinyin("");
+  return true;
 }
 
 fcitx::InputBuffer &FanimeState::getBuffer() { return buffer_; }

@@ -34,6 +34,9 @@ private:
   fcitx::InputBuffer buffer_{{fcitx::InputBufferOption::AsciiOnly, fcitx::InputBufferOption::FixedCursor}};
   bool use_fullhelpcode_ = false;
   static std::unique_ptr<::Log> logger;
+  
+  bool is_trigger_fullhelpcode_mode(std::string code);
+  bool reset_fullhelpcode_mode();
 };
 
 class FanimeEngine : public fcitx::InputMethodEngineV2 {
