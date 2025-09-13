@@ -1,4 +1,5 @@
 #include "pinyin_utils.h"
+#include <cctype>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
@@ -176,6 +177,9 @@ std::string PinyinUtil::compute_helpcodes(std::string words) {
   }
   if (helpcodes.size() > 0) {
     helpcodes = "(" + helpcodes + ")";
+  }
+  if (helpcodes.size() == 4) {
+    helpcodes[2] = toupper(helpcodes[2]);
   }
   return helpcodes;
 }
