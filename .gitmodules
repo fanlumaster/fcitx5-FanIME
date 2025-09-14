@@ -1,3 +1,6 @@
 [submodule "googlepinyinime-rev"]
 	path = googlepinyinime-rev
 	url = https://github.com/fanlumaster/googlepinyinime-rev.git
+[submodule "utfcpp"]
+	path = utfcpp
+	url = https://github.com/nemtrif/utfcpp.git

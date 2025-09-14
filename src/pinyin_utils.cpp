@@ -3,6 +3,7 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
+#include "../utfcpp/source/utf8.h"
 
 std::string PinyinUtil::get_home_path() {
   const char *homeDir = getenv("HOME");
@@ -129,6 +130,25 @@ std::string::size_type PinyinUtil::get_first_char_size(std::string words) {
   return cplen;
 }
 
+/**
+ * @brief Get the first han char
+ *
+ * @param words
+ * @return std::string
+ */
+std::string PinyinUtil::get_first_han_char(const std::string &words) {
+  auto it = words.begin();
+  auto end = words.end();
+
+  if (it == end)
+    return "";
+
+  auto next = it;
+  utf8::next(next, end);
+
+  return std::string(it, next);
+}
+
 /*
   统计汉字的个数
 */
@@ -141,6 +161,26 @@ std::string::size_type PinyinUtil::get_last_char_size(std::string words) {
     cnt += 1;
   }
   return words.size() - prev_index;
+}
+
+/**
+ * @brief Get the last han char
+ *
+ * @param words
+ * @return std::string
+ */
+std::string PinyinUtil::get_last_han_char(const std::string &words) {
+  auto it = words.begin();
+  auto end = words.end();
+
+  if (it == end)
+    return "";
+
+  auto rit = words.end();
+  auto prev = rit;
+  utf8::prior(prev, it);
+
+  return std::string(prev, rit);
 }
 
 /*
@@ -156,30 +196,41 @@ std::string::size_type PinyinUtil::cnt_han_chars(std::string words) {
   return cnt;
 }
 
+/**
+ * @brief Compute helpcodes
+ *
+ * - Single Hanzi: (helpcode)
+ * - Multi Hanzi: (first hanzi's first helpcode + last hanzi's first helpcode)
+ *
+ * @param words UTF-8 string
+ * @return string Helpcodes surrounded by ()
+ */
 std::string PinyinUtil::compute_helpcodes(std::string words) {
   std::string helpcodes("");
   if (cnt_han_chars(words) == 1) {
     if (helpcode_keymap.count(words)) {
       helpcodes += helpcode_keymap[words];
+      helpcodes[1] = toupper(helpcodes[1]);
     }
   } else {
-    size_t index = 0;
-    while (index < words.size()) {
-      size_t cplen = get_first_char_size(words.substr(index, words.size() - index));
-      std::string cur_han(words.substr(index, cplen));
-      if (helpcode_keymap.count(cur_han)) {
-        helpcodes += helpcode_keymap[cur_han].substr(0, 1);
-      } else {
-        return "";
-      }
-      index += cplen;
+    // First
+    std::string firstHan = get_first_han_char(words);
+    if (helpcode_keymap.count(firstHan)) {
+      helpcodes += helpcode_keymap[firstHan].substr(0, 1);
+    } else {
+      return "";
+    }
+    // Second
+    std::string lastHan = get_last_han_char(words);
+    if (helpcode_keymap.count(lastHan)) {
+      helpcodes += helpcode_keymap[lastHan].substr(0, 1);
+      helpcodes[1] = toupper(helpcodes[1]);
+    } else {
+      return "";
     }
   }
   if (helpcodes.size() > 0) {
     helpcodes = "(" + helpcodes + ")";
-  }
-  if (helpcodes.size() == 4) {
-    helpcodes[2] = toupper(helpcodes[2]);
   }
   return helpcodes;
 }
